@@ -14,8 +14,15 @@
       <SystemsettingContent 
         v-else-if="currentPage === 'SystemsettingContent'"
       />
-      <!-- 可以继续增加更多页面，如： -->
-      <!-- <AnotherComponent v-else-if="currentPage === 'anotherPage'" /> -->
+      <netsetting 
+        v-else-if="currentPage === 'NetworkSettings'"
+      />
+      <MultiplexingInput 
+        v-else-if="currentPage === 'MultiplexingInput'"
+      />
+      <ClockSync 
+        v-else-if="currentPage === 'ClockSync'"
+      />
     </div>
   </div>
 </template>
@@ -24,7 +31,10 @@
 import Header from './components/Header.vue'
 import Content from './components/Content.vue'
 import LogContent from './components/LogContent.vue'
-import SystemsettingContent from './components/SystemsettingContent.vue';
+import SystemsettingContent from './components/SystemsettingContent.vue'
+import netsetting from './components/netsetting.vue'
+import MultiplexingInput from './components/MultiplexingInput.vue'
+import ClockSync from './components/ClockSync.vue';
 
 export default {
   name: 'App',
@@ -33,6 +43,9 @@ export default {
     Content,
     LogContent,
     SystemsettingContent,  // 引入 SystemsettingContent 组件
+    netsetting,
+    MultiplexingInput,
+    ClockSync,
   },
   data() {
     return {

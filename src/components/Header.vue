@@ -19,21 +19,21 @@
                 <!-- 点击后切换到第一个页面（状态概览） -->
                 <div 
                   class="submenu-item"
-                  @click="$emit('changePage', 'status')"
+                  @click="handlePageChange('status')"
                 >
                   状态概览
                 </div>
                 <!-- 点击后切换到第二个页面（日志） -->
                 <div 
                   class="submenu-item"
-                  @click="$emit('changePage', 'log')"
+                  @click="handlePageChange('log')"
                 >
                   日志
                 </div>
               </div>
             </li>
             
-            <!-- 系统设置（这里暂时不切换页面，只做演示） -->
+            <!-- 系统设置 -->
             <li 
               @mouseenter="showMenu('system')" 
               @mouseleave="hideMenu"
@@ -44,12 +44,24 @@
                 v-if="isSystemMenuVisible"
                 class="submenu"
               >
-                <div class="submenu-item">系统设置</div>
-                <div class="submenu-item">网络设置</div>
+                <!-- 点击后切换到系统设置页面 -->
+                <div 
+                  class="submenu-item"
+                  @click="handlePageChange('SystemsettingContent')"
+                >
+                  系统设置
+                </div>
+                <!-- 添加网络设置的跳转 -->
+                <div 
+                  class="submenu-item"
+                  @click="handlePageChange('NetworkSettings')"
+                >
+                  网络设置
+                </div>
               </div>
             </li>
             
-            <!-- DRM（这里暂时不切换页面，只做演示） -->
+            <!-- DRM -->
             <li 
               @mouseenter="showMenu('drm')" 
               @mouseleave="hideMenu"
@@ -60,10 +72,31 @@
                 v-if="isDrmMenuVisible"
                 class="submenu"
               >
-                <div class="submenu-item">复用流输入</div>
-                <div class="submenu-item">调制输出</div>
-                <div class="submenu-item">时钟同步</div>
-                <div class="submenu-item">基带数据录制</div>
+                <!-- 为 DRM 添加页面跳转 -->
+                <div 
+                  class="submenu-item"
+                  @click="handlePageChange('MultiplexingInput')"
+                >
+                  复用流输入
+                </div>
+                <div 
+                  class="submenu-item"
+                  @click="handlePageChange('ModulationOutput')"
+                >
+                  调制输出
+                </div>
+                <div 
+                  class="submenu-item"
+                  @click="handlePageChange('ClockSync')"
+                >
+                  时钟同步
+                </div>
+                <div 
+                  class="submenu-item"
+                  @click="handlePageChange('BasebandRecording')"
+                >
+                  基带数据录制
+                </div>
               </div>
             </li>
             
@@ -98,6 +131,7 @@ export default {
     }
   },
   methods: {
+    // 显示菜单
     showMenu(menu) {
       this.isStatusMenuVisible = false;
       this.isSystemMenuVisible = false;
@@ -111,14 +145,22 @@ export default {
         this.isDrmMenuVisible = true;
       }
     },
+    // 隐藏菜单
     hideMenu() {
       this.isStatusMenuVisible = false;
       this.isSystemMenuVisible = false;
       this.isDrmMenuVisible = false;
     },
+    // 退出登录
     logout() {
       console.log('登出');
     },
+    // 切换页面
+    handlePageChange(pageName) {
+      // 通过事件触发父组件的页面切换
+      this.$emit('changePage', pageName);
+    },
+    // 切换语言
     toggleLanguage() {
       this.currentLanguage = this.currentLanguage === 'zh' ? 'en' : 'zh';
       console.log(this.currentLanguage === 'zh' ? '切换到中文' : 'Switch to English');
