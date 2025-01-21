@@ -16,14 +16,12 @@
                 v-if="isStatusMenuVisible" 
                 class="submenu"
               >
-                <!-- 点击后切换到第一个页面（状态概览） -->
                 <div 
                   class="submenu-item"
                   @click="handlePageChange('status')"
                 >
                   状态概览
                 </div>
-                <!-- 点击后切换到第二个页面（日志） -->
                 <div 
                   class="submenu-item"
                   @click="handlePageChange('log')"
@@ -44,14 +42,12 @@
                 v-if="isSystemMenuVisible"
                 class="submenu"
               >
-                <!-- 点击后切换到系统设置页面 -->
                 <div 
                   class="submenu-item"
                   @click="handlePageChange('SystemsettingContent')"
                 >
                   系统设置
                 </div>
-                <!-- 添加网络设置的跳转 -->
                 <div 
                   class="submenu-item"
                   @click="handlePageChange('NetworkSettings')"
@@ -72,7 +68,6 @@
                 v-if="isDrmMenuVisible"
                 class="submenu"
               >
-                <!-- 为 DRM 添加页面跳转 -->
                 <div 
                   class="submenu-item"
                   @click="handlePageChange('MultiplexingInput')"
@@ -116,7 +111,6 @@
 export default {
   name: 'Header',
   props: {
-    // 父组件可传入当前页面名称（可用于样式高亮等）
     currentPage: {
       type: String,
       default: 'status'
@@ -131,7 +125,6 @@ export default {
     }
   },
   methods: {
-    // 显示菜单
     showMenu(menu) {
       this.isStatusMenuVisible = false;
       this.isSystemMenuVisible = false;
@@ -145,22 +138,17 @@ export default {
         this.isDrmMenuVisible = true;
       }
     },
-    // 隐藏菜单
     hideMenu() {
       this.isStatusMenuVisible = false;
       this.isSystemMenuVisible = false;
       this.isDrmMenuVisible = false;
     },
-    // 退出登录
     logout() {
       console.log('登出');
     },
-    // 切换页面
     handlePageChange(pageName) {
-      // 通过事件触发父组件的页面切换
       this.$emit('changePage', pageName);
     },
-    // 切换语言
     toggleLanguage() {
       this.currentLanguage = this.currentLanguage === 'zh' ? 'en' : 'zh';
       console.log(this.currentLanguage === 'zh' ? '切换到中文' : 'Switch to English');

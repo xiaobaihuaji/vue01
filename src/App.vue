@@ -23,6 +23,12 @@
       <ClockSync 
         v-else-if="currentPage === 'ClockSync'"
       />
+      <ModulationOutput 
+        v-else-if="currentPage === 'ModulationOutput'"
+      />
+      <BasebandRecording 
+        v-else-if="currentPage === 'BasebandRecording'"
+      />
     </div>
   </div>
 </template>
@@ -34,7 +40,9 @@ import LogContent from './components/LogContent.vue'
 import SystemsettingContent from './components/SystemsettingContent.vue'
 import netsetting from './components/netsetting.vue'
 import MultiplexingInput from './components/MultiplexingInput.vue'
-import ClockSync from './components/ClockSync.vue';
+import ClockSync from './components/ClockSync.vue'
+import ModulationOutput from './components/ModulationOutput.vue'
+import BasebandRecording from './components/BasebandRecording.vue'
 
 export default {
   name: 'App',
@@ -42,21 +50,23 @@ export default {
     Header,
     Content,
     LogContent,
-    SystemsettingContent,  // 引入 SystemsettingContent 组件
+    SystemsettingContent, 
     netsetting,
     MultiplexingInput,
     ClockSync,
+    ModulationOutput,
+    BasebandRecording
   },
   data() {
     return {
       // 默认显示第一个页面：状态概览
-      currentPage: 'status'  // 默认为 'status' 页面
+      currentPage: 'status' 
     }
   },
   methods: {
     // 统一处理来自 Header 或其他组件的 "切换页面" 事件
     handleChangePage(pageName) {
-      this.currentPage = pageName  // 更新 currentPage，控制显示不同的组件
+      this.currentPage = pageName; 
     }
   }
 }
