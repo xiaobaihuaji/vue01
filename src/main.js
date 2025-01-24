@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import App from './App.vue'
-import router from './router'
-import store from './store'
+import i18n from './i18n'  // 引入 i18n 配置
 
-createApp(App).use(store).use(router).mount('#app')
+createApp(App)
+  .use(i18n)  // 注册 i18n
+  .mount('#app')

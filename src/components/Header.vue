@@ -1,106 +1,68 @@
 <template>
   <header>
     <div class="header-content">
-      <div class="title">Bcom-8000 DRM调制器</div>
+      <div class="title">{{ $t('title') }}</div> <!-- 动态文本 -->
       <nav>
         <div class="nav-center">
           <ul>
             <!-- 状态 -->
-            <li 
-              @mouseenter="showMenu('status')" 
+            <li
+              @mouseenter="showMenu('status')"
               @mouseleave="hideMenu"
               class="nav-item"
             >
-              状态
-              <div 
-                v-if="isStatusMenuVisible" 
-                class="submenu"
-              >
-                <div 
-                  class="submenu-item"
-                  @click="handlePageChange('status')"
-                >
-                  状态概览
+              {{ $t('status') }} <!-- 动态文本 -->
+              <div v-if="isStatusMenuVisible" class="submenu">
+                <div class="submenu-item" @click="handlePageChange('status')">
+                  {{ $t('status') }} <!-- 动态文本 -->
                 </div>
-                <div 
-                  class="submenu-item"
-                  @click="handlePageChange('log')"
-                >
-                  日志
+                <div class="submenu-item" @click="handlePageChange('log')">
+                  {{ $t('log') }} <!-- 动态文本 -->
                 </div>
               </div>
             </li>
-            
+
             <!-- 系统设置 -->
-            <li 
-              @mouseenter="showMenu('system')" 
-              @mouseleave="hideMenu"
-              class="nav-item"
-            >
-              系统设置
-              <div 
-                v-if="isSystemMenuVisible"
-                class="submenu"
-              >
-                <div 
-                  class="submenu-item"
-                  @click="handlePageChange('SystemsettingContent')"
-                >
-                  系统设置
+            <li @mouseenter="showMenu('system')" @mouseleave="hideMenu" class="nav-item">
+              {{ $t('systemSettings') }} <!-- 动态文本 -->
+              <div v-if="isSystemMenuVisible" class="submenu">
+                <div class="submenu-item" @click="handlePageChange('SystemsettingContent')">
+                  {{ $t('systemSettings') }} <!-- 动态文本 -->
                 </div>
-                <div 
-                  class="submenu-item"
-                  @click="handlePageChange('NetworkSettings')"
-                >
-                  网络设置
+                <div class="submenu-item" @click="handlePageChange('NetworkSettings')">
+                  {{ $t('networkSettings') }} <!-- 动态文本 -->
                 </div>
               </div>
             </li>
-            
+
             <!-- DRM -->
-            <li 
-              @mouseenter="showMenu('drm')" 
-              @mouseleave="hideMenu"
-              class="nav-item"
-            >
+            <li @mouseenter="showMenu('drm')" @mouseleave="hideMenu" class="nav-item">
               DRM
-              <div 
-                v-if="isDrmMenuVisible"
-                class="submenu"
-              >
-                <div 
-                  class="submenu-item"
-                  @click="handlePageChange('MultiplexingInput')"
-                >
-                  复用流输入
+              <div v-if="isDrmMenuVisible" class="submenu">
+                <div class="submenu-item" @click="handlePageChange('MultiplexingInput')">
+                  {{ $t('multiplexingInput') }} <!-- 动态文本 -->
                 </div>
-                <div 
-                  class="submenu-item"
-                  @click="handlePageChange('ModulationOutput')"
-                >
-                  调制输出
+                <div class="submenu-item" @click="handlePageChange('ModulationOutput')">
+                  {{ $t('modulationOutput') }} <!-- 动态文本 -->
                 </div>
-                <div 
-                  class="submenu-item"
-                  @click="handlePageChange('ClockSync')"
-                >
-                  时钟同步
+                <div class="submenu-item" @click="handlePageChange('RFOutput')">
+                  {{ $t('rfOutput') }} <!-- 动态文本 -->
                 </div>
-                <div 
-                  class="submenu-item"
-                  @click="handlePageChange('BasebandRecording')"
-                >
-                  基带数据录制
+                <div class="submenu-item" @click="handlePageChange('EnvelopeOutput')">
+                  {{ $t('envelopeOutput') }} <!-- 动态文本 -->
+                </div>
+                <div class="submenu-item" @click="handlePageChange('PAPR')">
+                  {{ $t('PAPR') }} <!-- 动态文本 -->
                 </div>
               </div>
             </li>
-            
+
             <!-- 登出 -->
-            <li @click="logout" class="nav-item">登出</li>
+            <li @click="logout" class="nav-item">{{ $t('logout') }}</li> <!-- 动态文本 -->
           </ul>
         </div>
         <div class="language-toggle">
-          <button @click="toggleLanguage">中/英</button>
+          <button @click="toggleLanguage">{{ $t('languageToggle') }}</button> <!-- 动态文本 -->
         </div>
       </nav>
     </div>
@@ -151,6 +113,7 @@ export default {
     },
     toggleLanguage() {
       this.currentLanguage = this.currentLanguage === 'zh' ? 'en' : 'zh';
+      this.$i18n.locale = this.currentLanguage;  // 切换语言
       console.log(this.currentLanguage === 'zh' ? '切换到中文' : 'Switch to English');
     }
   }

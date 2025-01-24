@@ -1,0 +1,14 @@
+{
+  "title": "Bcom-8000 DRM Modulator",
+  "status": "Status",
+  "log": "Log",
+  "systemSettings": "System Settings",
+  "networkSettings": "Network Settings",
+  "multiplexingInput": "Multiplexing Input",
+  "modulationOutput": "Modulation Output",
+  "rfOutput": "RF Output",
+  "envelopeOutput": "Envelope Output",
+  "PAPR": "PAPR",
+  "logout": "Logout",
+  "languageToggle": "Toggle Language"
+}
