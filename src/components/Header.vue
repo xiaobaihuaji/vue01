@@ -61,9 +61,11 @@
             <li @click="logout" class="nav-item">{{ $t('logout') }}</li> <!-- 动态文本 -->
           </ul>
         </div>
+        <!--
         <div class="language-toggle">
-          <button @click="toggleLanguage">{{ $t('languageToggle') }}</button> <!-- 动态文本 -->
+          <button @click="toggleLanguage">{{ $t('languageToggle') }}</button> 
         </div>
+      -->
       </nav>
     </div>
   </header>
@@ -77,6 +79,7 @@ export default {
       type: String,
       default: 'status'
     }
+  
   },
   data() {
     return {
