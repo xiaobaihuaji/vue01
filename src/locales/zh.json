@@ -9,6 +9,8 @@
   "rfOutput": "射频输出",
   "envelopeOutput": "包络输出",
   "PAPR": "峰均比抑制",
+  "BasebandRecording": "基带录制",
+  "ClockSync": "时钟同步",
   "logout": "登出",
   "languageToggle": "切换语言"
 }

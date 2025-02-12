@@ -54,6 +54,12 @@
                 <div class="submenu-item" @click="handlePageChange('PAPR')">
                   {{ $t('PAPR') }} <!-- 动态文本 -->
                 </div>
+                <div class="submenu-item" @click="handlePageChange('BasebandRecording')">
+                  {{ $t('BasebandRecording') }} <!-- 动态文本 -->
+                </div>
+                <div class="submenu-item" @click="handlePageChange('ClockSync')">
+                  {{ $t('ClockSync') }} <!-- 动态文本 -->
+                </div>
               </div>
             </li>
 

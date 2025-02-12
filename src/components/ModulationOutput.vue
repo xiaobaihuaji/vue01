@@ -2,7 +2,6 @@
   <div class="content-wrapper">
     <div class="content">
       <div class="content-container">
-
         <!-- ==================== 调制输出 ==================== -->
         <h2>调制输出</h2>
         <table>
@@ -12,32 +11,70 @@
           </tr>
           <tr>
             <td>DRM模式</td>
-            <td>No Data</td>
+            <td>
+              <select v-model="currentDRMMode" class="custom-select">
+                <option v-for="mode in drmModes" :key="mode" :value="mode">
+                  {{ mode }}
+                </option>
+              </select>
+            </td>
           </tr>
           <tr>
             <td>频谱带宽</td>
-            <td>No Data</td>
+            <td>
+              <select v-model="spectrumBandwidth" class="custom-select">
+                <option v-for="bandwidth in bandwidths" :key="bandwidth" :value="bandwidth">
+                  {{ bandwidth }}
+                </option>
+              </select>
+            </td>
           </tr>
           <tr>
             <td>MSC模式</td>
-            <td>No Data</td>
+            <td>
+              <select v-model="mscMode" class="custom-select">
+                <option v-for="mode in mscModes" :key="mode" :value="mode">
+                  {{ mode }}
+                </option>
+              </select>
+            </td>
           </tr>
           <tr>
             <td>SDC模式</td>
-            <td>No Data</td>
+            <td>
+              <select v-model="sdcMode" class="custom-select">
+                <option v-for="mode in sdcModes" :key="mode" :value="mode">
+                  {{ mode }}
+                </option>
+              </select>
+            </td>
           </tr>
           <tr>
             <td>MSC保护等级A</td>
-            <td>No Data</td>
+            <td>
+              <select v-model="mscProtectionLevelA" class="custom-select">
+                <option v-for="level in protectionLevels" :key="level" :value="level">
+                  {{ level }}
+                </option>
+              </select>
+            </td>
           </tr>
           <tr>
             <td>MSC保护等级B</td>
-            <td>No Data</td>
+            <td>
+              <select v-model="mscProtectionLevelB" class="custom-select">
+                <option v-for="level in protectionLevels" :key="level" :value="level">
+                  {{ level }}
+                </option>
+              </select>
+            </td>
           </tr>
         </table>
-        <button @click="showSuccess">刷新</button>
+        <button @click="showSuccess">应用</button>
+
+        <!-- 其余模板代码保持不变 -->
         <div v-if="isModalVisible" class="modal">
-          <p>刷新成功！</p>
+          <p>应用成功！</p>
           <button @click="hideModal">关闭</button>
         </div>
 
@@ -94,12 +131,10 @@
 
         <!-- ==================== 幅相延时 ==================== -->
         <h3>幅相延时</h3>
-        <!-- 将“延时参数估计”、“延时参数设置”、“延时参数复位”和“延时量”改为 2×2 表格布局 -->
         <table>
           <tr>
             <td>延时参数估计</td>
             <td>
-              <!-- 同一行放三个按钮 -->
               <button class="blue-btn" @click="estimateDelay">延时参数估计</button>
               <button class="green-btn">延时参数设置</button>
               <button class="orange-btn" @click="tryResetDelay">延时参数复位</button>
@@ -125,7 +160,6 @@
           <button @click="confirmModalConfirm" class="blue-btn">确认</button>
           <button @click="confirmModalCancel">取消</button>
         </div>
-
       </div>
     </div>
   </div>
@@ -136,6 +170,23 @@ export default {
   name: 'ModulationOutput',
   data() {
     return {
+      // 新增：调制输出相关数据
+      currentDRMMode: 'A',
+      drmModes: ['A', 'B', 'C', 'D'],
+      
+      spectrumBandwidth: '4.5kHz',
+      bandwidths: ['4.5kHz', '5kHz', '9kHz', '10kHz', '18kHz', '20kHz'],
+      
+      sdcMode: '4QAM',
+      sdcModes: ['4QAM', '16QAM'],
+      
+      mscMode: '16QAM',
+      mscModes: ['16QAM', '64QAM'],
+      
+      mscProtectionLevelA: '0',
+      mscProtectionLevelB: '0',
+      protectionLevels: ['0', '1', '2', '3'],
+
       // 原有数据
       isModalVisible: false,
       isFrequencyConsistent: false,
@@ -146,11 +197,7 @@ export default {
         show: false,
         message: ''
       },
-
-      // 新增数据：幅相延时
       delayValue: '0.0',
-
-      // 确认弹窗
       confirmModal: {
         show: false,
         message: '',
@@ -159,7 +206,7 @@ export default {
     };
   },
   methods: {
-    // ==================== 原有方法 ====================
+    // 原有方法保持不变
     showSuccess() {
       this.isModalVisible = true;
       setTimeout(() => {
@@ -205,25 +252,17 @@ export default {
 
       this.dpdResult = '3';
     },
-
-    // ==================== 新增：幅相延时 ====================
     async estimateDelay() {
-      // 弹窗提示“延时参数估计中”，持续5秒
       this.showProcessingModal('延时参数估计中');
       await new Promise(resolve => setTimeout(resolve, 5000));
       this.hideProcessingModal();
 
-      // 提示“估计成功”，持续1秒
       this.showProcessingModal('估计成功');
       await new Promise(resolve => setTimeout(resolve, 1000));
       this.hideProcessingModal();
 
-      // 更新延时量到10.3
       this.delayValue = '10.3';
     },
-    // “延时参数设置”按钮暂时无功能，所以未实现
-
-    // 点击“延时参数复位”先弹出确认对话框
     tryResetDelay() {
       this.confirmModal = {
         show: true,
@@ -231,18 +270,15 @@ export default {
         onConfirm: this.resetDelay
       };
     },
-    // 用户点击“确认”
     confirmModalConfirm() {
       if (this.confirmModal.onConfirm) {
         this.confirmModal.onConfirm();
       }
       this.confirmModal.show = false;
     },
-    // 用户点击“取消”
     confirmModalCancel() {
       this.confirmModal.show = false;
     },
-    // 真正执行“延时参数复位”
     async resetDelay() {
       this.showProcessingModal('延时参数复位中');
       await new Promise(resolve => setTimeout(resolve, 5000));
@@ -252,7 +288,6 @@ export default {
       await new Promise(resolve => setTimeout(resolve, 1000));
       this.hideProcessingModal();
 
-      // 将延时量归零
       this.delayValue = '0.0';
     }
   }
@@ -260,6 +295,7 @@ export default {
 </script>
 
 <style scoped>
+/* 原有样式保持不变 */
 .content-wrapper {
   flex: 1;
   padding: 20px;
@@ -282,6 +318,23 @@ export default {
   margin: 0 auto;
 }
 
+/* 新增：下拉框样式 */
+.custom-select {
+  width: 200px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+  font-size: 14px;
+}
+
+.custom-select:focus {
+  outline: none;
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24,144,255,0.2);
+}
+
+/* 原有样式继续保持 */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -297,7 +350,6 @@ th, td {
   text-align: left;
 }
 
-/* 原有按钮样式 */
 button {
   background-color: #003366;
   color: white;
@@ -312,7 +364,6 @@ button:hover {
   background-color: #004488;
 }
 
-/* 新增按钮样式 */
 .blue-btn {
   background-color: #1890ff;
 }
@@ -338,7 +389,6 @@ button:hover {
   background-color: #a2fca2;
 }
 
-/* 弹窗 */
 .modal {
   position: fixed;
   top: 50%;
@@ -353,7 +403,6 @@ button:hover {
   z-index: 1000;
 }
 
-/* Switch样式 */
 .switch {
   position: relative;
   display: inline-block;
@@ -396,7 +445,6 @@ input:checked + .slider:before {
   transform: translateX(30px);
 }
 
-/* 输入框带单位样式 */
 .input-with-unit {
   position: relative;
   display: flex;

@@ -9,6 +9,8 @@
   "rfOutput": "RF Output",
   "envelopeOutput": "Envelope Output",
   "PAPR": "PAPR",
+  "BasebandRecording": "BasebandRecording",
+  "ClockSync": "Clock Sync",
   "logout": "Logout",
   "languageToggle": "Toggle Language"
 }
