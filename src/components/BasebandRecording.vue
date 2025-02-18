@@ -18,10 +18,10 @@
                 @blur="showUpDownButtons = false"
               />
               <span>秒</span>
-              <div v-if="showUpDownButtons" class="up-down-buttons">
+              <!-- <div v-if="showUpDownButtons" class="up-down-buttons">
                 <button @click="incrementTime">↑</button>
                 <button @click="decrementTime">↓</button>
-              </div>
+              </div> -->
             </div>
           </div>
   

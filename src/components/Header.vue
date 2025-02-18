@@ -64,7 +64,7 @@
             </li>
 
             <!-- 登出 -->
-            <li @click="logout" class="nav-item">{{ $t('logout') }}</li> <!-- 动态文本 -->
+            <!-- <li @click="logout" class="nav-item">{{ $t('logout') }}</li> 动态文本 -->
           </ul>
         </div>
         <!--

@@ -1,8 +1,10 @@
+GNSS时间以及经纬度不要这样采取默认值，要自动获取当前系统的相关状态，这样才能保证数据的准确性。
+在这个的基础上改：
 <template>
   <div class="content-wrapper">
     <div class="content">
       <div class="content-container">
-        <h2>复用流输入</h2>
+        <h2>时钟同步</h2>
 
         <!-- 表格 -->
         <table>
@@ -10,49 +12,88 @@
             <th>项目</th>
             <th>值/设置</th>
           </tr>
+          <!-- 时钟源 -->
           <tr>
-            <td>输入接口设置</td>
+            <td>时钟源</td>
             <td>
-              <select v-model="inputInterfaceSetting">
-                <option value="ETH1">ETH1</option>
-                <option value="ETH2">ETH2</option>
+              <select v-model="clockSource">
+                <option value="INT_10MHZ">INT_10MHZ: 内部10MHZ</option>
+                <option value="EXT_10MHZ">EXT_10MHZ: 外部10MHZ</option>
+                <option value="GNSS">GNSS</option>
               </select>
             </td>
           </tr>
+
+          <!-- SFN偏移 -->
           <tr>
-            <td>当前输入端口</td>
+            <td>SFN偏移</td>
             <td>
-              <select v-model="currentInputPort">
-                <option value="ETH1">ETH1</option>
-                <option value="ETH2">ETH2</option>
-              </select>
+              <input 
+                type="number" 
+                v-model="sfnOffset" 
+                min="-999" max="999"
+                placeholder="请输入SFN偏移"
+                :class="{'error': sfnOffset < -999 || sfnOffset > 999}"
+              />
+              <span>微秒   范围：-999 - 999</span>
+              <div v-if="sfnOffset < -999 || sfnOffset > 999" class="error-msg">范围：-999 到 +999</div>
             </td>
           </tr>
+
+          <!-- 输出频率校正 -->
           <tr>
-            <td>来源IP</td>
-            <td>{{ sourceIP }}</td>
-          </tr>
-          <tr>
-            <td>输入帧计数器</td>
-            <td>{{ inputFrameCounter }}</td>
-          </tr>
-          <tr>
-            <td>错误帧计数器</td>
-            <td>{{ errorFrameCounter }}</td>
-          </tr>
-          <tr>
-            <td>PFT使能状态</td>
+            <td>输出频率校正</td>
             <td>
-              {{ pftStatus }}
+              <input 
+                type="number" 
+                v-model="freqCorrection" 
+                min="-1000" max="1000"
+                placeholder="请输入频率校正值"
+                :class="{'error': freqCorrection < -1000 || freqCorrection > 1000}"
+              />
+              <span>PPB   范围：-1000 - 1000</span>
+              <div v-if="freqCorrection < -1000 || freqCorrection > 1000" class="error-msg">范围：-1000 到 +1000</div>
             </td>
           </tr>
+
+          <!-- VTCXO电压字 -->
           <tr>
-            <td>插入空帧计数器</td>
-            <td>{{ nullFrameCounter }}</td>
+            <td>VTCXO电压字</td>
+            <td>
+              <input 
+                type="number" 
+                v-model="vtcxoWord" 
+                min="0" max="65535"
+                placeholder="请输入VTCXO电压字"
+                :class="{'error': vtcxoWord < 0 || vtcxoWord > 65535}"
+              />
+              <span>范围: 0 到 65535</span>
+              <div v-if="vtcxoWord < 0 || vtcxoWord > 65535" class="error-msg">范围：0 到 65535</div>
+            </td>
           </tr>
+
+          <!-- GNSS锁定状态 -->
           <tr>
-            <td>已产生的I/Q帧计数器</td>
-            <td>{{ iqFrameCounter }}</td>
+            <td>GNSS锁定状态</td>
+            <td>{{ gnssLock }}</td>
+          </tr>
+
+          <!-- GNSS时间 -->
+          <tr>
+            <td>GNSS时间</td>
+            <td>{{ gnssTime }}</td>
+          </tr>
+
+          <!-- 经度 -->
+          <tr>
+            <td>经度</td>
+            <td>{{ longitude }}</td>
+          </tr>
+
+          <!-- 纬度 -->
+          <tr>
+            <td>纬度</td>
+            <td>{{ latitude }}</td>
           </tr>
         </table>
 
@@ -80,19 +121,18 @@
 
 <script>
 export default {
-  name: 'MultiplexingInput',
+  name: 'ClockSync',
   data() {
     return {
-      // 复用流输入的各项数据
-      inputInterfaceSetting: 'ETH1', // 输入接口设置
-      currentInputPort: 'ETH1', // 当前输入端口
-      sourceIP: '192.168.1.1', // 来源IP
-      inputFrameCounter: 1024, // 输入帧计数器
-      errorFrameCounter: 3, // 错误帧计数器
-      pftStatus: 'FALSE', // PFT使能状态
-      nullFrameCounter: 10, // 插入空帧计数器
-      iqFrameCounter: 512, // 已产生的I/Q帧计数器
-      pftStatus: 'FALSE', // PFT使能状态
+      // 数据项
+      clockSource: 'INT_10MHZ',  // 时钟源
+      sfnOffset: 0,  // SFN偏移
+      freqCorrection: 0,  // 输出频率校正
+      vtcxoWord: 0,  // VTCXO电压字
+      gnssLock: 'LOCKED',  // GNSS锁定状态
+      gnssTime: '2025-02-11 10:00:00',  // GNSS时间
+      longitude: '39°55′30.1″',  // 经度
+      latitude: '32°42′20.5″',  // 纬度
 
       // 控制弹窗显示
       isApplyModalVisible: false,
@@ -218,4 +258,15 @@ button:hover {
 .modal button:hover {
   background-color: #f0f0f0;
 }
+
+.error {
+  border: 2px solid red;
+}
+
+.error-msg {
+  color: red;
+  font-size: 12px;
+  margin-top: 5px;
+}
 </style>
+改完之后记得把完整版的代码发给我哟，不要只发修改的这一部分的代码，谢谢！
