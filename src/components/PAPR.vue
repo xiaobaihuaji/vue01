@@ -62,8 +62,8 @@ export default {
       let value = parseFloat(this.peakToAverageSuppressLevel);
       
       // 检查值是否在范围内
-      if (value < 7.0 || value > 15.0) {
-        this.showModal("调整失败，范围为 7.0 - 15.0");
+      if (value < 6.0 || value > 12.0) {
+        this.showModal("调整失败，范围为 6.0 - 12.0");
         setTimeout(() => {
           this.isModalVisible = false;
         }, 1000);
