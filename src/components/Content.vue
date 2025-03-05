@@ -53,82 +53,9 @@
           </tr>
         </table>
 
-        <!-- DRM通道信息 -->
-        <h3>DRM通道信息</h3>
-        <table>
-          <tr>
-            <th>项目</th>
-            <th>值</th>
-          </tr>
-          <tr>
-            <td>当前DRM模式</td>
-            <td>{{ drmInfo.currentDRMMode }}</td>
-          </tr>
-          <tr>
-            <td>频谱带宽</td>
-            <td>{{ drmInfo.spectrumBandwidth }}</td>
-          </tr>
-          <tr>
-            <td>MSC模式</td>
-            <td>{{ drmInfo.mscMode }}</td>
-          </tr>
-          <tr>
-            <td>SDC模式</td>
-            <td>{{ drmInfo.sdcMode }}</td>
-          </tr>
-          <tr>
-            <td>MSC保护级别A</td>
-            <td>{{ drmInfo.mscProtectionLevelA }}</td>
-          </tr>
-          <tr>
-            <td>MSC保护级别B</td>
-            <td>{{ drmInfo.mscProtectionLevelB }}</td>
-          </tr>
-        </table>
-
-        <!-- RF输出设置 -->
-        <h3>RF输出设置</h3>
-        <table>
-          <tr>
-            <th>项目</th>
-            <th>值/设置</th>
-          </tr>
-          <tr>
-            <td>RF输出功率 (dBm)</td>
-            <td>
-              <input type="text" v-model="rfSettings.outputPower">
-            </td>
-          </tr>
-          <tr>
-            <td>RF频率 (MHz)</td>
-            <td>
-              <input type="text" v-model="rfSettings.outputFreq">
-            </td>
-          </tr>
-          <tr>
-            <td>RF输出使能</td>
-            <td>
-              <input type="checkbox" v-model="rfSettings.outputEnable">
-            </td>
-          </tr>
-          <tr>
-            <td>PM调制使能</td>
-            <td>
-              <input type="checkbox" v-model="rfSettings.pmEnable">
-            </td>
-          </tr>
-          <tr>
-            <td>AM调制使能</td>
-            <td>
-              <input type="checkbox" v-model="rfSettings.amEnable">
-            </td>
-          </tr>
-        </table>
-
         <!-- 按钮区域 -->
         <div class="buttons-area">
           <button @click="refreshStatus">刷新状态</button>
-          <button @click="applyRFSettings">应用RF设置</button>
         </div>
 
         <!-- 刷新成功弹窗 -->
@@ -170,25 +97,6 @@ export default {
       systemDate: '',
       systemTime: '',
 
-      // DRM通道信息
-      drmInfo: {
-        currentDRMMode: '未知',
-        spectrumBandwidth: '未知',
-        mscMode: '未知',
-        sdcMode: '未知',
-        mscProtectionLevelA: '未知',
-        mscProtectionLevelB: '未知'
-      },
-
-      // RF输出设置
-      rfSettings: {
-        outputPower: '-8.4',
-        outputFreq: '14.000',
-        outputEnable: true,
-        pmEnable: true,
-        amEnable: false
-      },
-
       // 弹窗控制
       isModalVisible: false,
       isUpgrading: false,
@@ -217,62 +125,37 @@ export default {
     handleWebSocketMessage(data) {
       console.log('收到WebSocket消息:', data);
       // 根据返回数据更新界面状态
-      // 这里需要根据你的实际返回数据格式进行解析
       if (data) {
-        // 更新DRM通道信息
-        if (data['drmChannelInfo.currentDRMMode'] !== undefined) {
-          this.drmInfo.currentDRMMode = data['drmChannelInfo.currentDRMMode'];
+        // 更新系统状态信息
+        if (data['system.status'] !== undefined) {
+          this.systemStatus = data['system.status'];
         }
-        if (data['drmChannelInfo.spectrumBandwidth'] !== undefined) {
-          this.drmInfo.spectrumBandwidth = data['drmChannelInfo.spectrumBandwidth'];
+        if (data['system.temperature'] !== undefined) {
+          this.motherboardTemperature = data['system.temperature'];
         }
-        if (data['drmChannelInfo.mscMode'] !== undefined) {
-          this.drmInfo.mscMode = data['drmChannelInfo.mscMode'];
+        if (data['system.version'] !== undefined) {
+          this.softwareVersion = data['system.version'];
         }
-        if (data['drmChannelInfo.sdcMode'] !== undefined) {
-          this.drmInfo.sdcMode = data['drmChannelInfo.sdcMode'];
+        if (data['system.serialNumber'] !== undefined) {
+          this.serialNumber = data['system.serialNumber'];
         }
-        if (data['drmChannelInfo.mscProtectionLevelA'] !== undefined) {
-          this.drmInfo.mscProtectionLevelA = data['drmChannelInfo.mscProtectionLevelA'];
+        if (data['system.model'] !== undefined) {
+          this.productModel = data['system.model'];
         }
-        if (data['drmChannelInfo.mscProtectionLevelB'] !== undefined) {
-          this.drmInfo.mscProtectionLevelB = data['drmChannelInfo.mscProtectionLevelB'];
-        }
-
-        // 更新其他系统状态
-        // 这里需要根据实际返回数据添加相应的处理代码
       }
     },
 
     // 刷新状态
     refreshStatus() {
-      // 获取DRM通道信息
+      // 获取系统状态信息
       WebSocketService.sendGetCommand([
-        'drmChannelInfo.currentDRMMode',
-        'drmChannelInfo.spectrumBandwidth',
-        'drmChannelInfo.mscMode',
-        'drmChannelInfo.sdcMode',
-        'drmChannelInfo.mscProtectionLevelA',
-        'drmChannelInfo.mscProtectionLevelB'
+        'system.status',
+        'system.temperature',
+        'system.version',
+        'system.serialNumber',
+        'system.model'
       ]);
-
-      // 你可以在这里添加更多的get命令来获取其他状态信息
-      this.showSuccess();
-    },
-
-    // 应用RF设置
-    applyRFSettings() {
-      // 创建要设置的键值对
-      const settings = {
-        'exciter.rfOutputPower': this.rfSettings.outputPower,
-        'exciter.rfOutputFreq': this.rfSettings.outputFreq,
-        'exciter.rfOutputEnable': this.rfSettings.outputEnable,
-        'exciter.rfPMEnable': this.rfSettings.pmEnable,
-        'exciter.rfAMEnable': this.rfSettings.amEnable
-      };
-
-      // 发送set命令
-      WebSocketService.sendSetCommand(settings);
+      
       this.showSuccess();
     },
 
@@ -313,6 +196,8 @@ export default {
       WebSocketService.sendSetCommand({
         'system.date': this.systemDate
       });
+      
+      this.showSuccess();
     },
 
     applySystemTime() {
@@ -326,6 +211,8 @@ export default {
       WebSocketService.sendSetCommand({
         'system.time': this.systemTime
       });
+      
+      this.showSuccess();
     }
   },
   mounted() {
@@ -451,11 +338,6 @@ input[type="text"] {
   border: 1px solid #ddd;
   border-radius: 3px;
   width: 150px;
-}
-
-input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
 }
 
 h3 {
