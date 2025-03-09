@@ -124,9 +124,51 @@ export default {
     // 处理WebSocket消息
     handleWebSocketMessage(data) {
       console.log('收到WebSocket消息:', data);
-      // 根据返回数据更新界面状态
-      if (data) {
-        // 更新系统状态信息
+      
+      // 如果数据是字符串，尝试解析
+      if (typeof data === 'string') {
+        try {
+          data = JSON.parse(data);
+        } catch (e) {
+          console.error('无法解析响应数据:', e);
+          return;
+        }
+      }
+      
+      // 处理格式化的响应
+      if (data && data.params) {
+        // 处理返回的参数数组
+        data.params.forEach(param => {
+          if (param.result === 'success') {
+            const key = param.key;
+            const value = param.value;
+            
+            // 根据键名更新UI状态
+            switch(key) {
+              case 'system.status':
+                this.systemStatus = value;
+                break;
+              case 'system.temperature':
+                this.motherboardTemperature = value;
+                break;
+              case 'system.version':
+                this.softwareVersion = value;
+                break;
+              case 'system.serialNumber':
+                this.serialNumber = value;
+                break;
+              case 'system.model':
+                this.productModel = value;
+                break;
+              default:
+                console.log(`未处理的参数: ${key} = ${value}`);
+            }
+          } else {
+            console.error(`参数 ${param.key} 获取失败: ${param.error || '未知错误'}`);
+          }
+        });
+      } else if (data) {
+        // 兼容旧的直接键值对格式
         if (data['system.status'] !== undefined) {
           this.systemStatus = data['system.status'];
         }

@@ -4,17 +4,9 @@ let isConnected = false;
 let reconnectTimer = null;
 let messageCallbacks = [];
 
-
-
-
-
 //   xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 const WS_URL = 'ws://localhost:8880'; // 待修改
 //   xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-
-
-
 
 // 创建WebSocket连接
 function connect() {
@@ -38,11 +30,14 @@ function connect() {
   socket.onmessage = (event) => {
     console.log('收到消息:', event.data);
     try {
+      // 尝试解析JSON格式的响应
       const data = JSON.parse(event.data);
       // 触发所有注册的回调函数
       messageCallbacks.forEach(callback => callback(data));
     } catch (e) {
       console.error('解析消息出错:', e);
+      // 如果不是JSON格式，也尝试传递给回调
+      messageCallbacks.forEach(callback => callback(event.data));
     }
   };
 
@@ -61,20 +56,28 @@ function connect() {
   };
 }
 
-// 发送get命令
+// 发送get命令 - 修改为符合文档要求的格式
 function sendGetCommand(keys) {
   if (!isConnected || !socket) {
     console.error('WebSocket未连接，无法发送命令');
     return false;
   }
 
-  const message = {
-    command: 'get',
-    key: Array.isArray(keys) ? keys : [keys]
-  };
+  // 按照文档要求格式化get命令
+  // 格式："get "key1","key2","key3" ......"
+  let formattedKeys = '';
+  if (Array.isArray(keys)) {
+    formattedKeys = keys.map(key => `"${key}"`).join(',');
+  } else {
+    formattedKeys = `"${keys}"`;
+  }
+
+  const message = `get ${formattedKeys}`;
+  
+  console.log('发送get命令:', message);
 
   try {
-    socket.send(JSON.stringify(message));
+    socket.send(message);
     return true;
   } catch (e) {
     console.error('发送get命令失败:', e);
@@ -82,20 +85,35 @@ function sendGetCommand(keys) {
   }
 }
 
-// 发送set命令
+// 发送set命令 - 修改为符合文档要求的格式
 function sendSetCommand(keyValues) {
   if (!isConnected || !socket) {
     console.error('WebSocket未连接，无法发送命令');
     return false;
   }
 
-  const message = {
-    command: 'set',
-    key: keyValues
-  };
+  // 按照文档要求格式化set命令
+  // 格式："set "key1":"value1","key2":"value2" ......"
+  let formattedKeyValues = '';
+  const entries = Object.entries(keyValues);
+  
+  formattedKeyValues = entries.map(([key, value]) => {
+    // 处理布尔值、数字和字符串
+    if (typeof value === 'boolean') {
+      return `"${key}":${value}`;
+    } else if (typeof value === 'number') {
+      return `"${key}":${value}`;
+    } else {
+      return `"${key}":"${value}"`;
+    }
+  }).join(',');
+
+  const message = `set ${formattedKeyValues}`;
+  
+  console.log('发送set命令:', message);
 
   try {
-    socket.send(JSON.stringify(message));
+    socket.send(message);
     return true;
   } catch (e) {
     console.error('发送set命令失败:', e);

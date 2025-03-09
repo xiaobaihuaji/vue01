@@ -1,10 +1,160 @@
-现在我们接着来做，我现在已经做出来了一个界面，也已经与后端连上了，这是我一个界面的代码：
-```content
+这是我现在的websocket文件：
+```
+// WebSocket服务
+let socket = null;
+let isConnected = false;
+let reconnectTimer = null;
+let messageCallbacks = [];
+
+
+
+
+
+//   xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+const WS_URL = 'ws://localhost:8880'; // 待修改
+//   xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+
+
+
+
+// 创建WebSocket连接
+function connect() {
+  if (socket && (socket.readyState === WebSocket.CONNECTING || socket.readyState === WebSocket.OPEN)) {
+    console.log('WebSocket已连接或正在连接');
+    return;
+  }
+
+  console.log('正在连接WebSocket服务器...');
+  socket = new WebSocket(WS_URL);
+
+  socket.onopen = () => {
+    console.log('WebSocket连接成功');
+    isConnected = true;
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
+  };
+
+  socket.onmessage = (event) => {
+    console.log('收到消息:', event.data);
+    try {
+      const data = JSON.parse(event.data);
+      // 触发所有注册的回调函数
+      messageCallbacks.forEach(callback => callback(data));
+    } catch (e) {
+      console.error('解析消息出错:', e);
+    }
+  };
+
+  socket.onclose = () => {
+    console.log('WebSocket连接已关闭');
+    isConnected = false;
+    // 自动重连
+    reconnectTimer = setTimeout(() => {
+      connect();
+    }, 5000);
+  };
+
+  socket.onerror = (error) => {
+    console.error('WebSocket错误:', error);
+    isConnected = false;
+  };
+}
+
+// 发送get命令
+function sendGetCommand(keys) {
+  if (!isConnected || !socket) {
+    console.error('WebSocket未连接，无法发送命令');
+    return false;
+  }
+
+  const message = {
+    command: 'get',
+    key: Array.isArray(keys) ? keys : [keys]
+  };
+
+  try {
+    socket.send(JSON.stringify(message));
+    return true;
+  } catch (e) {
+    console.error('发送get命令失败:', e);
+    return false;
+  }
+}
+
+// 发送set命令
+function sendSetCommand(keyValues) {
+  if (!isConnected || !socket) {
+    console.error('WebSocket未连接，无法发送命令');
+    return false;
+  }
+
+  const message = {
+    command: 'set',
+    key: keyValues
+  };
+
+  try {
+    socket.send(JSON.stringify(message));
+    return true;
+  } catch (e) {
+    console.error('发送set命令失败:', e);
+    return false;
+  }
+}
+
+// 注册消息回调
+function onMessage(callback) {
+  if (typeof callback === 'function') {
+    messageCallbacks.push(callback);
+  }
+}
+
+// 注销消息回调
+function offMessage(callback) {
+  const index = messageCallbacks.indexOf(callback);
+  if (index !== -1) {
+    messageCallbacks.splice(index, 1);
+  }
+}
+
+// 关闭WebSocket连接
+function disconnect() {
+  if (socket) {
+    socket.close();
+    socket = null;
+  }
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+  isConnected = false;
+  messageCallbacks = [];
+}
+
+// 导出WebSocket服务的方法
+export default {
+  connect,
+  disconnect,
+  sendGetCommand,
+  sendSetCommand,
+  onMessage,
+  offMessage,
+  isConnected: () => isConnected
+};
+```
+这是我现在的vue content文件：
+```
 <template>
   <div class="content-wrapper">
     <div class="content">
       <div class="content-container">
         <h2>状态概览</h2>
+        <div class="connection-status" :class="{ connected: wsConnected }">
+          WebSocket状态: {{ wsConnected ? '已连接' : '未连接' }}
+        </div>
         <table>
           <tr>
             <th>项目</th>
@@ -52,12 +202,14 @@
           </tr>
         </table>
 
-        <!-- 刷新按钮 -->
-        <button @click="showSuccess">应用</button>
+        <!-- 按钮区域 -->
+        <div class="buttons-area">
+          <button @click="refreshStatus">刷新状态</button>
+        </div>
 
         <!-- 刷新成功弹窗 -->
         <div v-if="isModalVisible" class="modal">
-          <p>应用成功！</p>
+          <p>操作成功！</p>
           <button @click="hideModal">关闭</button>
         </div>
 
@@ -76,16 +228,21 @@
 </template>
 
 <script>
+import WebSocketService from '@/store/websocket';
+
 export default {
   name: 'Content',
   data() {
     return {
+      // WebSocket连接状态
+      wsConnected: false,
+
       // 系统状态数据
-      systemStatus: 'OK',
-      motherboardTemperature: 37.6,
-      softwareVersion: 'V5',
-      serialNumber: 'ECDAVNB666',
-      productModel: 'DRM OF ECDAV',
+      systemStatus: '未知',
+      motherboardTemperature: 0,
+      softwareVersion: '未知',
+      serialNumber: '未知',
+      productModel: '未知',
       systemDate: '',
       systemTime: '',
 
@@ -96,49 +253,131 @@ export default {
     }
   },
   methods: {
+    // 初始化WebSocket连接
+    initWebSocket() {
+      WebSocketService.connect();
+      // 注册消息处理回调
+      WebSocketService.onMessage(this.handleWebSocketMessage);
+      // 监听WebSocket连接状态
+      this.checkConnectionStatus();
+    },
+
+    // 检查WebSocket连接状态
+    checkConnectionStatus() {
+      this.wsConnected = WebSocketService.isConnected();
+      setTimeout(() => {
+        this.checkConnectionStatus();
+      }, 2000);
+    },
+
+    // 处理WebSocket消息
+    handleWebSocketMessage(data) {
+      console.log('收到WebSocket消息:', data);
+      // 根据返回数据更新界面状态
+      if (data) {
+        // 更新系统状态信息
+        if (data['system.status'] !== undefined) {
+          this.systemStatus = data['system.status'];
+        }
+        if (data['system.temperature'] !== undefined) {
+          this.motherboardTemperature = data['system.temperature'];
+        }
+        if (data['system.version'] !== undefined) {
+          this.softwareVersion = data['system.version'];
+        }
+        if (data['system.serialNumber'] !== undefined) {
+          this.serialNumber = data['system.serialNumber'];
+        }
+        if (data['system.model'] !== undefined) {
+          this.productModel = data['system.model'];
+        }
+      }
+    },
+
+    // 刷新状态
+    refreshStatus() {
+      // 获取系统状态信息
+      WebSocketService.sendGetCommand([
+        'system.status',
+        'system.temperature',
+        'system.version',
+        'system.serialNumber',
+        'system.model'
+      ]);
+      
+      this.showSuccess();
+    },
+
     // 刷新相关方法
     showSuccess() {
-      this.isModalVisible = true
+      this.isModalVisible = true;
+      setTimeout(() => {
+        this.hideModal();
+      }, 2000);
     },
     hideModal() {
-      this.isModalVisible = false
+      this.isModalVisible = false;
     },
 
     // 固件升级相关方法
     startFirmwareUpgrade() {
-      this.isUpgrading = true
+      this.isUpgrading = true;
       // 5秒后显示升级成功
       setTimeout(() => {
-        this.isUpgrading = false
-        this.upgradeSuccess = true
+        this.isUpgrading = false;
+        this.upgradeSuccess = true;
         // 1秒后关闭升级成功提示
         setTimeout(() => {
-          this.upgradeSuccess = false
-        }, 1000)
-      }, 5000)
+          this.upgradeSuccess = false;
+        }, 1000);
+      }, 5000);
     },
 
     // 系统日期时间相关方法
     applySystemDate() {
-      const now = new Date()
-      const year = now.getFullYear()
-      const month = String(now.getMonth() + 1).padStart(2, '0')
-      const day = String(now.getDate()).padStart(2, '0')
-      this.systemDate = `${year}-${month}-${day}`
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      this.systemDate = `${year}-${month}-${day}`;
+      
+      // 这里可以添加WebSocket通信代码来设置系统日期
+      WebSocketService.sendSetCommand({
+        'system.date': this.systemDate
+      });
+      
+      this.showSuccess();
     },
 
     applySystemTime() {
-      const now = new Date()
-      const hours = String(now.getHours()).padStart(2, '0')
-      const minutes = String(now.getMinutes()).padStart(2, '0')
-      const seconds = String(now.getSeconds()).padStart(2, '0')
-      this.systemTime = `${hours}:${minutes}:${seconds}`
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      this.systemTime = `${hours}:${minutes}:${seconds}`;
+      
+      // 这里可以添加WebSocket通信代码来设置系统时间
+      WebSocketService.sendSetCommand({
+        'system.time': this.systemTime
+      });
+      
+      this.showSuccess();
     }
   },
   mounted() {
+    // 初始化WebSocket连接
+    this.initWebSocket();
+    
     // 初始化时获取系统时间日期
-    this.applySystemDate()
-    this.applySystemTime()
+    this.applySystemDate();
+    this.applySystemTime();
+    
+    // 初始化时获取状态信息
+    this.refreshStatus();
+  },
+  beforeUnmount() {
+    // 组件卸载前注销WebSocket消息回调
+    WebSocketService.offMessage(this.handleWebSocketMessage);
   }
 }
 </script>
@@ -164,6 +403,18 @@ export default {
 .content-container {
   max-width: 800px;
   margin: 0 auto;
+}
+
+.connection-status {
+  margin-bottom: 15px;
+  padding: 8px;
+  background-color: #ffcccc;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.connection-status.connected {
+  background-color: #ccffcc;
 }
 
 table {
@@ -195,6 +446,12 @@ button:hover {
   background-color: #004488;
 }
 
+.buttons-area {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
 .modal {
   position: fixed;
   top: 50%;
@@ -206,6 +463,7 @@ button:hover {
   border-radius: 5px;
   text-align: center;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
 }
 
 .modal button {
@@ -224,16 +482,18 @@ button:hover {
   gap: 10px;
 }
 
-input {
+input[type="text"] {
   padding: 5px;
   border: 1px solid #ddd;
   border-radius: 3px;
   width: 150px;
 }
+
+h3 {
+  margin-top: 30px;
+  margin-bottom: 10px;
+  color: #003366;
+}
 </style>
 ```
-以上各个变量的标识符，数据类型，取值以及可读可写性我已经写了，你可以直接看代码，我现在要实现的功能是：实时获取后端的状态以及可以向后端写入状态。
-我老师给我了一对这样的代码，他说类似于这样可以，但是我不会啊，请你教我具体怎么弄：
-Command: set, Key: {"exciter.rfOutputPower": "-8.4", "exciter.rfPMEnable": true, "exciter.rfOutputFreq": "14.000", "exciter.rfOutputEnable": true, "exciter.rfAMEnable": false}
-Command: get, Key: ["drmChannelInfo.currentDRMMode", "drmChannelInfo.spectrumBandwidth", "drmChannelInfo.mscMode", "drmChannelInfo.sdcMode", "drmChannelInfo.mscProtectionLevelA", "drmChannelInfo.mscProtectionLevelB"]
-如图是我的工作目录，请你告诉我我是应该在哪里添加文件或者说是在哪个文件添加新的代码。以及我现在已经是获取这个ws开头的地址了，我怎么切实的连到那个机器上。我是一个小白，请你尽可能基础的告诉我
+请你据此格式告诉我怎么改？改哪里？并把修改后的完整版代码发给我！谢谢。
