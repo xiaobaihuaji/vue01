@@ -5,6 +5,7 @@
 
 
 // WebSocket服务
+//kkk
 let socket = null;
 let isConnected = false;
 let reconnectTimer = null;
@@ -21,7 +22,7 @@ function connect() {
     return;
   }
 
-  console.log('正在连接WebSocket服务器...');
+  console.log('正在逐步连接WebSocket服务器...');
   socket = new WebSocket(WS_URL);
 
   socket.onopen = () => {
