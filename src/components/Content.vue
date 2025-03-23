@@ -73,6 +73,17 @@
         <div v-if="upgradeSuccess" class="modal">
           <p>升级成功！</p>
         </div>
+        
+        <!-- 错误提示弹窗 -->
+        <div v-if="errorInfo.visible" class="modal error-modal">
+          <h3>错误</h3>
+          <p>{{ errorInfo.message }}</p>
+          <div v-if="errorInfo.details" class="error-details">{{ errorInfo.details }}</div>
+          <div class="modal-buttons">
+            <button @click="hideErrorModal">关闭</button>
+            <button @click="retryLastOperation">重试</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -100,7 +111,20 @@ export default {
       // 弹窗控制
       isModalVisible: false,
       isUpgrading: false,
-      upgradeSuccess: false
+      upgradeSuccess: false,
+      
+      // 错误信息
+      errorInfo: {
+        visible: false,
+        message: '',
+        details: ''
+      },
+      
+      // 记录上次操作（用于重试）
+      lastOperation: {
+        type: '',
+        data: null
+      }
     }
   },
   methods: {
@@ -125,12 +149,19 @@ export default {
     handleWebSocketMessage(data) {
       console.log('收到WebSocket消息:', data);
       
+      // 如果有错误属性，显示错误
+      if (data && data.error === true) {
+        this.showError(data.message || '通信错误', data.details);
+        return;
+      }
+      
       // 如果数据是字符串，尝试解析
       if (typeof data === 'string') {
         try {
           data = JSON.parse(data);
         } catch (e) {
           console.error('无法解析响应数据:', e);
+          this.showError('无法解析服务器响应', data);
           return;
         }
       }
@@ -144,60 +175,61 @@ export default {
             const value = param.value;
             
             // 根据键名更新UI状态
-            switch(key) {
-              case 'system.status':
-                this.systemStatus = value;
-                break;
-              case 'system.temperature':
-                this.motherboardTemperature = value;
-                break;
-              case 'system.version':
-                this.softwareVersion = value;
-                break;
-              case 'system.serialNumber':
-                this.serialNumber = value;
-                break;
-              case 'system.model':
-                this.productModel = value;
-                break;
-              default:
-                console.log(`未处理的参数: ${key} = ${value}`);
-            }
+            this.updateParameterValue(key, value);
           } else {
             console.error(`参数 ${param.key} 获取失败: ${param.error || '未知错误'}`);
+            this.showError(`参数 ${param.key} 获取失败`, param.error || '未知错误');
           }
         });
       } else if (data) {
         // 兼容旧的直接键值对格式
-        if (data['system.status'] !== undefined) {
-          this.systemStatus = data['system.status'];
-        }
-        if (data['system.temperature'] !== undefined) {
-          this.motherboardTemperature = data['system.temperature'];
-        }
-        if (data['system.version'] !== undefined) {
-          this.softwareVersion = data['system.version'];
-        }
-        if (data['system.serialNumber'] !== undefined) {
-          this.serialNumber = data['system.serialNumber'];
-        }
-        if (data['system.model'] !== undefined) {
-          this.productModel = data['system.model'];
-        }
+        Object.keys(data).forEach(key => {
+          this.updateParameterValue(key, data[key]);
+        });
+      }
+    },
+    
+    // 根据参数名更新对应的值
+    updateParameterValue(key, value) {
+      switch(key) {
+        case 'system.systemStatus':
+          this.systemStatus = value;
+          break;
+        case 'system.motherboardTemperature':
+          this.motherboardTemperature = value;
+          break;
+        case 'system.softwareVersion':
+          this.softwareVersion = value;
+          break;
+        case 'system.serialNumber':
+          this.serialNumber = value;
+          break;
+        case 'system.productModel':
+          this.productModel = value;
+          break;
+        default:
+          console.log(`未处理的参数: ${key} = ${value}`);
       }
     },
 
     // 刷新状态
     refreshStatus() {
-      // 获取系统状态信息
-      WebSocketService.sendGetCommand([
-        'system.status',
-        'system.temperature',
-        'system.version',
+      // 获取系统状态信息，使用正确的属性名
+      const keys = [
+        'system.systemStatus',
+        'system.motherboardTemperature',
+        'system.softwareVersion',
         'system.serialNumber',
-        'system.model'
-      ]);
+        'system.productModel'
+      ];
       
+      // 保存操作以便重试
+      this.lastOperation = {
+        type: 'get',
+        data: keys
+      };
+      
+      WebSocketService.sendGetCommand(keys);
       this.showSuccess();
     },
 
@@ -210,6 +242,31 @@ export default {
     },
     hideModal() {
       this.isModalVisible = false;
+    },
+    
+    // 错误处理
+    showError(message, details = '') {
+      this.errorInfo = {
+        visible: true,
+        message: message,
+        details: details
+      };
+    },
+    
+    hideErrorModal() {
+      this.errorInfo.visible = false;
+    },
+    
+    // 重试上次操作
+    retryLastOperation() {
+      if (this.lastOperation.type && this.lastOperation.data) {
+        if (this.lastOperation.type === 'get') {
+          WebSocketService.sendGetCommand(this.lastOperation.data);
+        } else if (this.lastOperation.type === 'set') {
+          WebSocketService.sendSetCommand(this.lastOperation.data);
+        }
+      }
+      this.hideErrorModal();
     },
 
     // 固件升级相关方法
@@ -234,11 +291,15 @@ export default {
       const day = String(now.getDate()).padStart(2, '0');
       this.systemDate = `${year}-${month}-${day}`;
       
-      // 这里可以添加WebSocket通信代码来设置系统日期
-      WebSocketService.sendSetCommand({
-        'system.date': this.systemDate
-      });
+      // 保存操作以便重试
+      const data = { 'system.systemDate': this.systemDate };
+      this.lastOperation = {
+        type: 'set',
+        data: data
+      };
       
+      // 使用正确的属性名设置系统日期
+      WebSocketService.sendSetCommand(data);
       this.showSuccess();
     },
 
@@ -249,11 +310,15 @@ export default {
       const seconds = String(now.getSeconds()).padStart(2, '0');
       this.systemTime = `${hours}:${minutes}:${seconds}`;
       
-      // 这里可以添加WebSocket通信代码来设置系统时间
-      WebSocketService.sendSetCommand({
-        'system.time': this.systemTime
-      });
+      // 保存操作以便重试
+      const data = { 'system.systemTime': this.systemTime };
+      this.lastOperation = {
+        type: 'set',
+        data: data
+      };
       
+      // 使用正确的属性名设置系统时间
+      WebSocketService.sendSetCommand(data);
       this.showSuccess();
     }
   },
@@ -261,12 +326,15 @@ export default {
     // 初始化WebSocket连接
     this.initWebSocket();
     
-    // 初始化时获取系统时间日期
-    this.applySystemDate();
-    this.applySystemTime();
-    
-    // 初始化时获取状态信息
-    this.refreshStatus();
+    // 延迟执行初始化操作，确保WebSocket连接已建立
+    setTimeout(() => {
+      // 初始化时获取系统日期时间
+      this.applySystemDate();
+      this.applySystemTime();
+      
+      // 初始化时获取状态信息
+      this.refreshStatus();
+    }, 1000);
   },
   beforeUnmount() {
     // 组件卸载前注销WebSocket消息回调
@@ -369,6 +437,28 @@ button:hover {
   background-color: #f0f0f0;
 }
 
+.error-modal {
+  background-color: #cc3333;
+  min-width: 300px;
+}
+
+.error-details {
+  font-size: 0.9em;
+  max-width: 400px;
+  word-break: break-all;
+  margin-top: 10px;
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
+}
+
 .system-time-date {
   display: flex;
   align-items: center;
@@ -383,8 +473,8 @@ input[type="text"] {
 }
 
 h3 {
-  margin-top: 30px;
+  margin-top: 5px;
   margin-bottom: 10px;
-  color: #003366;
+  color: white;
 }
 </style>
