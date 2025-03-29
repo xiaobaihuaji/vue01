@@ -50,7 +50,8 @@ function connect() {
 }
 
 // 发送get命令
-function sendGetCommand(keys) {
+function sendGetCommand(keys) 
+{
   if (!isConnected || !socket) {
     console.error('WebSocket未连接，无法发送命令');
     return false;

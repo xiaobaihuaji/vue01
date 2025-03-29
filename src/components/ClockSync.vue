@@ -4,6 +4,11 @@
       <div class="content-container">
         <h2>时钟同步</h2>
 
+        <!-- WebSocket连接状态显示 -->
+        <div class="connection-status" :class="{ connected: wsConnected }">
+          WebSocket状态: {{ wsConnected ? '已连接' : '未连接' }}
+        </div>
+
         <!-- 表格 -->
         <table>
           <tr>
@@ -95,10 +100,10 @@
           </tr>
         </table>
 
-        <!-- 应用按钮 -->
+        <!-- 应用按钮与刷新按钮 -->
         <div class="button-container">
-          <button @click="showApplySuccess">应用</button>
-          <button @click="showRefreshSuccess">刷新</button>
+          <button @click="applyClockSync">应用</button>
+          <button @click="refreshClockSync">刷新</button>
         </div>
 
         <!-- 应用成功弹窗提示 -->
@@ -112,59 +117,234 @@
           <p>刷新成功！</p>
           <button @click="hideRefreshModal">关闭</button>
         </div>
+
+        <!-- 错误提示弹窗 -->
+        <div v-if="errorInfo.visible" class="modal error-modal">
+          <h3>错误</h3>
+          <p>{{ errorInfo.message }}</p>
+          <div v-if="errorInfo.details" class="error-details">{{ errorInfo.details }}</div>
+          <div class="modal-buttons">
+            <button @click="hideErrorModal">关闭</button>
+            <button @click="retryLastOperation">重试</button>
+          </div>
+        </div>
+
+        <!-- WebSocket连接状态错误或其他信息可在errorInfo中提示 -->
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import WebSocketService from '@/store/websocket';
+
 export default {
   name: 'ClockSync',
   data() {
     return {
-      // 数据项
-      clockSource: 'INT_10MHZ',  // 时钟源
-      sfnOffset: 0,  // SFN偏移
-      freqCorrection: 0,  // 输出频率校正
-      vtcxoWord: 0,  // VTCXO电压字
-      gnssLock: 'LOCKED',  // GNSS锁定状态
-      gnssTime: '',  // GNSS时间
-      longitude: '',  // 经度
-      latitude: '',  // 纬度
+      // 数据项（对应后端参数）
+      clockSource: 'INT_10MHZ', // exciter.clockSource
+      sfnOffset: 0,            // exciter.sfnOffset
+      freqCorrection: 0,       // exciter.freqOffset
+      vtcxoWord: 0,            // exciter.vtcxoWord
+      gnssLock: '',            // exciter.gnssLockStatus
+      gnssTime: '',            // gnssTime
+      longitude: '',           // longitude
+      latitude: '',            // latitude
 
-      // 控制弹窗显示
+      // 弹窗控制
       isApplyModalVisible: false,
       isRefreshModalVisible: false,
+
+      // WebSocket相关
+      wsConnected: false,
+      errorInfo: {
+        visible: false,
+        message: '',
+        details: ''
+      },
+      lastOperation: {
+        type: '',
+        data: null
+      }
     };
   },
-  mounted() {
-    // 模拟获取GNSS时间，经度和纬度，假设从系统获取数据
-    this.getSystemStatus();
-  },
   methods: {
-    // 获取系统的GNSS时间、经度和纬度
-    getSystemStatus() {
-      // 模拟获取 GNSS 时间、经度和纬度
-      this.gnssTime = new Date().toLocaleString();  // 获取当前时间
-      this.longitude = '39°55′30.1″';  // 模拟经度
-      this.latitude = '32°42′20.5″';  // 模拟纬度
+    // ----------------------- WebSocket 初始化及状态检测 -----------------------
+    initWebSocket() {
+      WebSocketService.connect();
+      WebSocketService.onMessage(this.handleWebSocketMessage);
+      this.checkConnectionStatus();
     },
-    // 显示应用成功弹窗
-    showApplySuccess() {
+    checkConnectionStatus() {
+      this.wsConnected = WebSocketService.isConnected();
+      setTimeout(() => {
+        this.checkConnectionStatus();
+      }, 2000);
+    },
+    // ----------------------- 处理后端消息 -----------------------
+    handleWebSocketMessage(data) {
+      console.log('收到WebSocket消息:', data);
+      if (data && data.error === true) {
+        this.showError(data.message || '通信错误', data.details);
+        return;
+      }
+      // 尝试解析JSON
+      if (typeof data === 'string') {
+        try {
+          data = JSON.parse(data);
+        } catch (e) {
+          console.error('无法解析响应数据:', e);
+          this.showError('无法解析服务器响应', data);
+          return;
+        }
+      }
+      // 如果有params数组
+      if (data && data.params) {
+        data.params.forEach(param => {
+          if (param.result === 'success') {
+            this.updateParameterValue(param.key, param.value);
+          } else {
+            console.error(`参数 ${param.key} 获取失败: ${param.error || '未知错误'}`);
+            this.showError(`参数 ${param.key} 获取失败`, param.error || '未知错误');
+          }
+        });
+      } else if (data) {
+        // 兼容旧格式
+        Object.keys(data).forEach(key => {
+          this.updateParameterValue(key, data[key]);
+        });
+      }
+    },
+    // ----------------------- 根据键名更新UI -----------------------
+    updateParameterValue(key, value) {
+      switch (key) {
+        case 'clockSource':
+          this.clockSource = value;
+          break;
+        case 'sfnOffset':
+          this.sfnOffset = parseInt(value);
+          break;
+        case 'freqCorrection':
+          this.freqCorrection = parseInt(value);
+          break;
+        case 'vtcxoWord':
+          this.vtcxoWord = parseInt(value);
+          break;
+        case 'gnssLockStatus':
+          this.gnssLock = value;
+          break;
+        case 'gnssTime':
+          this.gnssTime = value;
+          break;
+        case 'longitude':
+          this.longitude = value;
+          break;
+        case 'latitude':
+          this.latitude = value;
+          break;
+        default:
+          console.log(`未处理的参数: ${key} = ${value}`);
+      }
+    },
+    // ----------------------- 应用时钟同步设置 -----------------------
+    applyClockSync() {
+      // 简单的范围校验
+      if (this.sfnOffset < -999 || this.sfnOffset > 999) {
+        this.showError('SFN偏移超出范围', '范围 -999~999');
+        return;
+      }
+      if (this.freqCorrection < -1000 || this.freqCorrection > 1000) {
+        this.showError('频率校正超出范围', '范围 -1000~1000');
+        return;
+      }
+      if (this.vtcxoWord < 0 || this.vtcxoWord > 65535) {
+        this.showError('VTCXO电压字超出范围', '范围 0~65535');
+        return;
+      }
+
+      // 组装set命令
+      const data = {
+        'clockSource': this.clockSource,
+        'sfnOffset': parseInt(this.sfnOffset),
+        'freqCorrection': parseInt(this.freqCorrection),
+        'vtcxoWord': parseInt(this.vtcxoWord)
+      };
+      this.lastOperation = {
+        type: 'set',
+        data: data
+      };
+      WebSocketService.sendSetCommand(data);
+
+      // 显示应用成功提示
       this.isApplyModalVisible = true;
+      setTimeout(() => {
+        this.hideApplyModal();
+      }, 1000);
     },
-    // 隐藏应用成功弹窗
     hideApplyModal() {
       this.isApplyModalVisible = false;
     },
-    // 显示刷新成功弹窗
-    showRefreshSuccess() {
+    // ----------------------- 刷新时钟同步数据 -----------------------
+    refreshClockSync() {
+      // 获取相关参数
+      const keys = [
+        'clockSource',
+        'sfnOffset',
+        'freqCorrection',
+        'vtcxoWord',
+        'gnssLockStatus',
+        'gnssTime',
+        'longitude',
+        'latitude'
+      ];
+      this.lastOperation = {
+        type: 'get',
+        data: keys
+      };
+      WebSocketService.sendGetCommand(keys);
+
+      // 显示刷新成功提示
       this.isRefreshModalVisible = true;
+      setTimeout(() => {
+        this.hideRefreshModal();
+      }, 1000);
     },
-    // 隐藏刷新成功弹窗
     hideRefreshModal() {
       this.isRefreshModalVisible = false;
+    },
+    // ----------------------- 错误处理 -----------------------
+    showError(message, details = '') {
+      this.errorInfo = {
+        visible: true,
+        message,
+        details
+      };
+    },
+    hideErrorModal() {
+      this.errorInfo.visible = false;
+    },
+    retryLastOperation() {
+      if (this.lastOperation.type && this.lastOperation.data) {
+        if (this.lastOperation.type === 'get') {
+          WebSocketService.sendGetCommand(this.lastOperation.data);
+        } else if (this.lastOperation.type === 'set') {
+          WebSocketService.sendSetCommand(this.lastOperation.data);
+        }
+      }
+      this.hideErrorModal();
     }
+  },
+  mounted() {
+    // 初始化WebSocket连接
+    this.initWebSocket();
+    // 延迟获取初始值
+    setTimeout(() => {
+      this.refreshClockSync();
+    }, 1000);
+  },
+  beforeUnmount() {
+    WebSocketService.offMessage(this.handleWebSocketMessage);
   }
 };
 </script>
@@ -195,6 +375,19 @@ export default {
 h2 {
   text-align: center;
   margin-bottom: 30px;
+}
+
+/* WebSocket连接状态提示 */
+.connection-status {
+  margin-bottom: 15px;
+  padding: 8px;
+  background-color: #ffcccc;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.connection-status.connected {
+  background-color: #ccffcc;
 }
 
 table {
@@ -245,6 +438,7 @@ button:hover {
   background-color: #004488;
 }
 
+/* 弹窗 */
 .modal {
   position: fixed;
   top: 50%;
@@ -256,6 +450,7 @@ button:hover {
   border-radius: 5px;
   text-align: center;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
 }
 
 .modal button {
@@ -268,6 +463,30 @@ button:hover {
   background-color: #f0f0f0;
 }
 
+/* 错误弹窗 */
+.error-modal {
+  background-color: #cc3333;
+  min-width: 300px;
+}
+
+.error-details {
+  font-size: 0.9em;
+  max-width: 400px;
+  word-break: break-all;
+  margin-top: 10px;
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+/* 错误样式 */
 .error {
   border: 2px solid red;
 }

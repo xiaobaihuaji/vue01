@@ -4,6 +4,10 @@
       <div class="content-container">
         <h2>复用流输入</h2>
 
+        <div class="connection-status" :class="{ connected: wsConnected }">
+          WebSocket状态: {{ wsConnected ? '已连接' : '未连接' }}
+        </div>
+
         <!-- 表格 -->
         <table>
           <tr>
@@ -21,12 +25,7 @@
           </tr>
           <tr>
             <td>当前输入端口</td>
-            <td>
-              <select v-model="currentInputPort">
-                <option value="ETH1">ETH1</option>
-                <option value="ETH2">ETH2</option>
-              </select>
-            </td>
+            <td>{{ currentInputPort }}</td>
           </tr>
           <tr>
             <td>来源IP</td>
@@ -42,9 +41,7 @@
           </tr>
           <tr>
             <td>PFT使能状态</td>
-            <td>
-              {{ pftStatus }}
-            </td>
+            <td>{{ pftStatus }}</td>
           </tr>
           <tr>
             <td>插入空帧计数器</td>
@@ -56,68 +53,152 @@
           </tr>
         </table>
 
-        <!-- 应用按钮 -->
-        <div class="button-container">
-          <button @click="showApplySuccess">应用</button>
-          <button @click="showRefreshSuccess">刷新</button>
+        <!-- 按钮区域 -->
+        <div class="buttons-area">
+          <button @click="applySettings">应用</button>
+          <button @click="refreshStatus">刷新状态</button>
         </div>
 
-        <!-- 应用成功弹窗提示 -->
-        <div v-if="isApplyModalVisible" class="modal">
-          <p>应用成功！</p>
-          <button @click="hideApplyModal">关闭</button>
+        <!-- 弹窗提示 -->
+        <div v-if="isModalVisible" class="modal">
+          <p>{{ modalMessage }}</p>
+          <button @click="hideModal">关闭</button>
         </div>
 
-        <!-- 刷新成功弹窗提示 -->
-        <div v-if="isRefreshModalVisible" class="modal">
-          <p>刷新成功！</p>
-          <button @click="hideRefreshModal">关闭</button>
+        <!-- 错误提示弹窗 -->
+        <div v-if="errorInfo.visible" class="modal error-modal">
+          <h3>错误</h3>
+          <p>{{ errorInfo.message }}</p>
+          <div v-if="errorInfo.details" class="error-details">{{ errorInfo.details }}</div>
+          <div class="modal-buttons">
+            <button @click="hideErrorModal">关闭</button>
+            <button @click="retryLastOperation">重试</button>
+          </div>
         </div>
+
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import WebSocketService from '@/store/websocket';
+
 export default {
   name: 'MultiplexingInput',
   data() {
     return {
-      // 复用流输入的各项数据
-      inputInterfaceSetting: 'ETH1', // 输入接口设置
-      currentInputPort: 'ETH1', // 当前输入端口
-      sourceIP: '192.168.1.1', // 来源IP
-      inputFrameCounter: 1024, // 输入帧计数器
-      errorFrameCounter: 3, // 错误帧计数器
-      pftStatus: 'FALSE', // PFT使能状态
-      nullFrameCounter: 10, // 插入空帧计数器
-      iqFrameCounter: 512, // 已产生的I/Q帧计数器
-      pftStatus: 'FALSE', // PFT使能状态
+      wsConnected: false,
+      inputInterfaceSetting: 'ETH1',
+      currentInputPort: '',
+      sourceIP: '',
+      inputFrameCounter: 0,
+      errorFrameCounter: 0,
+      pftStatus: 'FALSE',
+      nullFrameCounter: 0,
+      iqFrameCounter: 0,
 
-      // 控制弹窗显示
-      isApplyModalVisible: false,
-      isRefreshModalVisible: false,
-    };
+      isModalVisible: false,
+      modalMessage: '',
+
+      errorInfo: {
+        visible: false,
+        message: '',
+        details: ''
+      },
+
+      lastOperation: {
+        type: '',
+        data: null
+      }
+    }
   },
   methods: {
-    // 显示应用成功弹窗
-    showApplySuccess() {
-      this.isApplyModalVisible = true;
+    initWebSocket() {
+      WebSocketService.connect();
+      WebSocketService.onMessage(this.handleWebSocketMessage);
+      this.checkConnectionStatus();
     },
-    // 隐藏应用成功弹窗
-    hideApplyModal() {
-      this.isApplyModalVisible = false;
+    checkConnectionStatus() {
+      this.wsConnected = WebSocketService.isConnected();
+      setTimeout(() => this.checkConnectionStatus(), 2000);
     },
-    // 显示刷新成功弹窗
-    showRefreshSuccess() {
-      this.isRefreshModalVisible = true;
+    handleWebSocketMessage(data) {
+      if (data.error) {
+        this.showError(data.message || '通信错误', data.details);
+        return;
+      }
+      if (data.params) {
+        data.params.forEach(param => {
+          if (param.result === 'success') {
+            this.updateValue(param.key, param.value);
+          } else {
+            this.showError(`参数 ${param.key} 获取失败`, param.error);
+          }
+        });
+      }
     },
-    // 隐藏刷新成功弹窗
-    hideRefreshModal() {
-      this.isRefreshModalVisible = false;
+    updateValue(key, value) {
+      switch (key) {
+        case 'inputInterfaceSetting': this.inputInterfaceSetting = value; break;
+        case 'currentInputPort': this.currentInputPort = value; break;
+        case 'sourceIP': this.sourceIP = value; break;
+        case 'inputFrameCounter': this.inputFrameCounter = value; break;
+        case 'errorFrameCounter': this.errorFrameCounter = value; break;
+        case 'pftStatus': this.pftStatus = value; break;
+        case 'nullFrameCounter': this.nullFrameCounter = value; break;
+        case 'iqFrameCounter': this.iqFrameCounter = value; break;
+        default: console.log(`未处理的字段: ${key}`);
+      }
+    },
+    refreshStatus() {
+      const keys = [
+        'inputInterfaceSetting', 'currentInputPort', 'sourceIP',
+        'inputFrameCounter', 'errorFrameCounter', 'pftStatus',
+        'nullFrameCounter', 'iqFrameCounter'
+      ];
+      this.lastOperation = { type: 'get', data: keys };
+      WebSocketService.sendGetCommand(keys);
+      this.showSuccess('刷新成功！');
+    },
+    applySettings() {
+      const data = { inputInterfaceSetting: this.inputInterfaceSetting };
+      this.lastOperation = { type: 'set', data };
+      WebSocketService.sendSetCommand(data);
+      this.showSuccess('应用成功！');
+    },
+    showSuccess(message) {
+      this.modalMessage = message;
+      this.isModalVisible = true;
+    },
+    hideModal() {
+      this.isModalVisible = false;
+    },
+    showError(message, details = '') {
+      this.errorInfo = { visible: true, message, details };
+    },
+    hideErrorModal() {
+      this.errorInfo.visible = false;
+    },
+    retryLastOperation() {
+      if (this.lastOperation.type === 'get') {
+        WebSocketService.sendGetCommand(this.lastOperation.data);
+      } else if (this.lastOperation.type === 'set') {
+        WebSocketService.sendSetCommand(this.lastOperation.data);
+      }
+      this.hideErrorModal();
     }
+  },
+  mounted() {
+    this.initWebSocket();
+    setTimeout(() => {
+      this.refreshStatus();
+    }, 1000);
+  },
+  beforeUnmount() {
+    WebSocketService.offMessage(this.handleWebSocketMessage);
   }
-};
+}
 </script>
 
 <style scoped>
@@ -128,7 +209,6 @@ export default {
   display: flex;
   justify-content: center;
 }
-
 .content {
   width: 100%;
   max-width: 1000px;
@@ -137,51 +217,37 @@ export default {
   border-radius: 5px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
-
 .content-container {
   max-width: 800px;
   margin: 0 auto;
 }
-
-h2 {
+.connection-status {
+  margin-bottom: 15px;
+  padding: 8px;
+  background-color: #ffcccc;
+  border-radius: 4px;
   text-align: center;
-  margin-bottom: 30px;
 }
-
+.connection-status.connected {
+  background-color: #ccffcc;
+}
 table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 20px;
 }
-
 table, th, td {
   border: 1px solid #ddd;
 }
-
 th, td {
   padding: 10px;
   text-align: left;
 }
-
-.input-with-unit {
+.buttons-area {
   display: flex;
-  align-items: center;
+  justify-content: center;
+  margin: 20px 0;
 }
-
-.input-with-buttons input {
-  width: 100px;
-  padding: 5px;
-  margin-right: 10px;
-}
-
-.unit {
-  color: #999;
-}
-
-.button-container {
-  margin-bottom: 20px;
-}
-
 button {
   background-color: #003366;
   color: white;
@@ -191,11 +257,9 @@ button {
   cursor: pointer;
   margin-right: 10px;
 }
-
 button:hover {
   background-color: #004488;
 }
-
 .modal {
   position: fixed;
   top: 50%;
@@ -207,15 +271,33 @@ button:hover {
   border-radius: 5px;
   text-align: center;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
 }
-
 .modal button {
   margin-top: 10px;
   background-color: white;
   color: #003366;
 }
-
 .modal button:hover {
   background-color: #f0f0f0;
+}
+.error-modal {
+  background-color: #cc3333;
+  min-width: 300px;
+}
+.error-details {
+  font-size: 0.9em;
+  max-width: 400px;
+  word-break: break-all;
+  margin-top: 10px;
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
 }
 </style>
