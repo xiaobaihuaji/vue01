@@ -29,10 +29,7 @@
                 />
                 <span class="unit">dB</span>
                 <div v-if="showUpDownButtons" class="up-down-buttons">
-                  <!-- 可根据需要开启上下增减功能
-                  <button @click="incrementGain">↑</button>
-                  <button @click="decrementGain">↓</button>
-                  -->
+                  <!-- 可根据需要开启上下增减功能 -->
                 </div>
               </div>
             </td>
@@ -51,10 +48,7 @@
                 />
                 <span class="unit">%</span>
                 <div v-if="showUpDownButtons" class="up-down-buttons">
-                  <!--
-                  <button @click="incrementCompensation">↑</button>
-                  <button @click="decrementCompensation">↓</button>
-                  -->
+                  <!-- 可根据需要开启上下增减功能 -->
                 </div>
               </div>
             </td>
@@ -93,13 +87,14 @@ export default {
   data() {
     return {
       // 包络输出相关数据
-      gainValue: -6.0,       // 对应后端 key: exciter.RfEnvelopeLevel
-      dcCompensation: 0.0,   // 对应后端 key: exciter.RfEnvelopeDC
+      // 对应后台返回的参数使用 drmChannelInfo 前缀
+      gainValue: -6.0,       // 对应 key: drmChannelInfo.RfEnvelopeLevel
+      dcCompensation: 0.0,   // 对应 key: drmChannelInfo.RfEnvelopeDC
 
       // 弹窗控制
       isModalVisible: false,
       modalMessage: '',
-      showUpDownButtons: false, // 控制上下按钮显示
+      showUpDownButtons: false,
 
       // WebSocket相关数据
       wsConnected: false,
@@ -131,13 +126,10 @@ export default {
     // ----------------------- WebSocket 消息处理 -----------------------
     handleWebSocketMessage(data) {
       console.log('收到WebSocket消息:', data);
-
-      // 如果有错误属性，显示错误
       if (data && data.error === true) {
         this.showError(data.message || '通信错误', data.details);
         return;
       }
-      // 如果数据是字符串，尝试解析
       if (typeof data === 'string') {
         try {
           data = JSON.parse(data);
@@ -147,9 +139,7 @@ export default {
           return;
         }
       }
-      // 处理返回的数据
       if (data && data.params) {
-        // params为数组
         data.params.forEach(param => {
           if (param.result === 'success') {
             this.updateParameterValue(param.key, param.value);
@@ -159,7 +149,6 @@ export default {
           }
         });
       } else if (data) {
-        // 兼容旧的直接键值对格式
         Object.keys(data).forEach(key => {
           this.updateParameterValue(key, data[key]);
         });
@@ -167,44 +156,45 @@ export default {
     },
     // ----------------------- 参数更新 -----------------------
     updateParameterValue(key, value) {
+      // 如果 key 带有 drmChannelInfo. 前缀，则去除该前缀
+      if (key.startsWith('drmChannelInfo.')) {
+        key = key.slice('drmChannelInfo.'.length);
+      }
       switch(key) {
-        case 'exciter.RfEnvelopeLevel':
-          // 电平增益
+        case 'RfEnvelopeLevel':
           this.gainValue = parseFloat(value);
           break;
-        case 'exciter.RfEnvelopeDC':
-          // 直流补偿
+        case 'RfEnvelopeDC':
           this.dcCompensation = parseFloat(value);
           break;
         default:
           console.log(`未处理的参数: ${key} = ${value}`);
       }
-      // 显示成功提示
+      // 获取或设置成功后显示提示
       this.showModal('获取/设置成功');
     },
     // ----------------------- 应用操作 -----------------------
     applyEnvelope() {
-      // 组装set命令对象
+      // 组装 set 命令对象，使用 drmChannelInfo 前缀
       const data = {
-        'exciter.RfEnvelopeLevel': parseFloat(this.gainValue).toFixed(1),
-        'exciter.RfEnvelopeDC': parseFloat(this.dcCompensation).toFixed(1)
+        'drmChannelInfo.RfEnvelopeLevel': parseFloat(this.gainValue).toFixed(1),
+        'drmChannelInfo.RfEnvelopeDC': parseFloat(this.dcCompensation).toFixed(1)
       };
-      this.lastOperation = {
-        type: 'set',
-        data: data
-      };
+      this.lastOperation = { type: 'set', data: data };
       WebSocketService.sendSetCommand(data);
       this.showModal('正在应用设置...');
     },
-    // ----------------------- 弹窗方法 -----------------------
+    // ----------------------- 弹窗与错误处理 -----------------------
     showModal(message) {
       this.modalMessage = message;
       this.isModalVisible = true;
+      setTimeout(() => {
+        this.hideModal();
+      }, 2000);
     },
     hideModal() {
       this.isModalVisible = false;
     },
-    // ----------------------- 错误处理 -----------------------
     showError(message, details = '') {
       this.errorInfo = {
         visible: true,
@@ -224,39 +214,22 @@ export default {
         }
       }
       this.hideErrorModal();
-    },
-    // ----------------------- 增减操作（可选） -----------------------
-    incrementGain() {
-      this.gainValue = (parseFloat(this.gainValue) + 0.1).toFixed(1);
-    },
-    decrementGain() {
-      this.gainValue = (parseFloat(this.gainValue) - 0.1).toFixed(1);
-    },
-    incrementCompensation() {
-      this.dcCompensation = (parseFloat(this.dcCompensation) + 0.1).toFixed(1);
-    },
-    decrementCompensation() {
-      this.dcCompensation = (parseFloat(this.dcCompensation) - 0.1).toFixed(1);
     }
   },
   mounted() {
     // 初始化WebSocket连接
     this.initWebSocket();
-    // 延时获取初始值
+    // 延时获取初始值，使用带前缀的 key
     setTimeout(() => {
       const keys = [
-        'exciter.RfEnvelopeLevel',
-        'exciter.RfEnvelopeDC'
+        'drmChannelInfo.RfEnvelopeLevel',
+        'drmChannelInfo.RfEnvelopeDC'
       ];
-      this.lastOperation = {
-        type: 'get',
-        data: keys
-      };
+      this.lastOperation = { type: 'get', data: keys };
       WebSocketService.sendGetCommand(keys);
     }, 1000);
   },
   beforeUnmount() {
-    // 组件卸载前注销WebSocket消息回调
     WebSocketService.offMessage(this.handleWebSocketMessage);
   }
 };
@@ -270,7 +243,6 @@ export default {
   display: flex;
   justify-content: center;
 }
-
 .content {
   width: 100%;
   max-width: 1000px;
@@ -279,18 +251,10 @@ export default {
   border-radius: 5px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
-
 .content-container {
   max-width: 800px;
   margin: 0 auto;
 }
-
-h2 {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-/* WebSocket连接状态提示 */
 .connection-status {
   margin-bottom: 15px;
   padding: 8px;
@@ -298,47 +262,38 @@ h2 {
   border-radius: 4px;
   text-align: center;
 }
-
 .connection-status.connected {
   background-color: #ccffcc;
 }
-
 table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 20px;
 }
-
 table, th, td {
   border: 1px solid #ddd;
 }
-
 th, td {
   padding: 10px;
   text-align: left;
 }
-
 .input-with-unit {
   position: relative;
   display: flex;
   align-items: center;
 }
-
 .input-with-buttons {
   display: flex;
   align-items: center;
 }
-
 .input-with-buttons input {
   width: 100px;
   padding: 5px;
   margin-right: 10px;
 }
-
 .unit {
   color: #999;
 }
-
 .up-down-buttons button {
   background-color: #003366;
   color: white;
@@ -347,11 +302,9 @@ th, td {
   cursor: pointer;
   margin-left: 5px;
 }
-
 .up-down-buttons button:hover {
   background-color: #004488;
 }
-
 button {
   background-color: #003366;
   color: white;
@@ -362,12 +315,41 @@ button {
   margin-top: 20px;
   width: 100%;
 }
-
 button:hover {
   background-color: #004488;
 }
-
-/* 弹窗 */
+.custom-select {
+  width: 200px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+  font-size: 14px;
+}
+.custom-select:focus {
+  outline: none;
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24,144,255,0.2);
+}
+.blue-btn {
+  background-color: #1890ff;
+}
+.blue-btn:hover {
+  background-color: #40a9ff;
+}
+.orange-btn {
+  background-color: #f5a623;
+}
+.orange-btn:hover {
+  background-color: #ffbb33;
+}
+.green-btn {
+  background-color: #90ee90;
+  color: #333;
+}
+.green-btn:hover {
+  background-color: #a2fca2;
+}
 .modal {
   position: fixed;
   top: 50%;
@@ -381,23 +363,18 @@ button:hover {
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
   z-index: 1000;
 }
-
 .modal button {
   margin-top: 10px;
   background-color: white;
   color: #003366;
 }
-
 .modal button:hover {
   background-color: #f0f0f0;
 }
-
-/* 错误弹窗 */
 .error-modal {
   background-color: #cc3333;
   min-width: 300px;
 }
-
 .error-details {
   font-size: 0.9em;
   max-width: 400px;
@@ -407,11 +384,67 @@ button:hover {
   background-color: rgba(0, 0, 0, 0.1);
   border-radius: 3px;
 }
-
 .modal-buttons {
   display: flex;
   justify-content: center;
   gap: 10px;
   margin-top: 15px;
+}
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 30px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 34px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+input:checked + .slider {
+  background-color: #1890ff;
+}
+input:checked + .slider:before {
+  transform: translateX(30px);
+}
+.input-with-unit {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.input-with-unit input {
+  padding-right: 50px;
+  width: 200px;
+}
+.unit {
+  color: #999;
+  margin-left: 8px;
+}
+.note {
+  margin-left: 10px;
+  color: #666;
+  font-size: 0.9em;
 }
 </style>

@@ -89,6 +89,7 @@ export default {
   data() {
     return {
       wsConnected: false,
+      // 初始设置：默认接口选择ETH1
       inputInterfaceSetting: 'ETH1',
       currentInputPort: '',
       sourceIP: '',
@@ -138,30 +139,55 @@ export default {
         });
       }
     },
+    // 更新传回的数据时，若带有 "mdiInputSettings." 前缀，则去除再更新对应变量
     updateValue(key, value) {
+      if (key.startsWith('mdiInputSettings.')) {
+        key = key.slice('mdiInputSettings.'.length);
+      }
       switch (key) {
-        case 'inputInterfaceSetting': this.inputInterfaceSetting = value; break;
-        case 'currentInputPort': this.currentInputPort = value; break;
-        case 'sourceIP': this.sourceIP = value; break;
-        case 'inputFrameCounter': this.inputFrameCounter = value; break;
-        case 'errorFrameCounter': this.errorFrameCounter = value; break;
-        case 'pftStatus': this.pftStatus = value; break;
-        case 'nullFrameCounter': this.nullFrameCounter = value; break;
-        case 'iqFrameCounter': this.iqFrameCounter = value; break;
-        default: console.log(`未处理的字段: ${key}`);
+        case 'currentInputPort':
+          this.currentInputPort = value;
+          break;
+        case 'sourceIP':
+          this.sourceIP = value;
+          break;
+        case 'inputFrameCounter':
+          this.inputFrameCounter = value;
+          break;
+        case 'errorFrameCounter':
+          this.errorFrameCounter = value;
+          break;
+        case 'pftStatus':
+          this.pftStatus = value;
+          break;
+        case 'nullFrameCounter':
+          this.nullFrameCounter = value;
+          break;
+        case 'iqFrameCounter':
+          this.iqFrameCounter = value;
+          break;
+        // 其它字段保留原值，如 inputInterfaceSetting 可能通过设置改变
+        default:
+          console.log(`未处理的字段: ${key}`);
       }
     },
     refreshStatus() {
+      // 请求时使用带前缀的key
       const keys = [
-        'inputInterfaceSetting', 'currentInputPort', 'sourceIP',
-        'inputFrameCounter', 'errorFrameCounter', 'pftStatus',
-        'nullFrameCounter', 'iqFrameCounter'
+        'mdiInputSettings.currentInputPort',
+        'mdiInputSettings.sourceIP',
+        'mdiInputSettings.inputFrameCounter',
+        'mdiInputSettings.errorFrameCounter',
+        'mdiInputSettings.pftStatus',
+        'mdiInputSettings.nullFrameCounter',
+        'mdiInputSettings.iqFrameCounter'
       ];
       this.lastOperation = { type: 'get', data: keys };
       WebSocketService.sendGetCommand(keys);
       this.showSuccess('刷新成功！');
     },
     applySettings() {
+      // 此处仅应用输入接口设置（如有其它设置可扩展）
       const data = { inputInterfaceSetting: this.inputInterfaceSetting };
       this.lastOperation = { type: 'set', data };
       WebSocketService.sendSetCommand(data);
@@ -198,7 +224,7 @@ export default {
   beforeUnmount() {
     WebSocketService.offMessage(this.handleWebSocketMessage);
   }
-}
+};
 </script>
 
 <style scoped>

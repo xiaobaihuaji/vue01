@@ -9,16 +9,6 @@
 
         <h2>日志</h2>
         <p>当前日志条数: {{ logs.length }}</p>
-        
-        <!-- 输入框
-        <div class="log-form">
-          <input v-model="newEvent" type="text" placeholder="事件" />
-          <input v-model="newCategory" type="text" placeholder="分类" />
-          <input v-model="newTime" type="text" placeholder="时间" readonly />
-          <button @click="setCurrentTime">获取当前时间</button>
-          <input v-model="newDescription" type="text" placeholder="描述" />
-          <button @click="addLog">确定</button>
-        </div> -->
 
         <!-- 日志列表 -->
         <table>
@@ -84,21 +74,17 @@ export default {
       // WebSocket连接状态
       wsConnected: false,
 
-      // 日志相关
-      logs: [],           // 日志数组（从后端获取）
-      newEvent: '',
-      newCategory: '',
-      newTime: '',
-      newDescription: '',
+      // 日志数组
+      logs: [],
 
       // 分页
-      currentPage: 1,     // 当前页码
-      logsPerPage: 5,     // 每页日志条数
+      currentPage: 1,
+      logsPerPage: 5,
 
       // 刷新成功弹窗
       isModalVisible: false,
 
-      // 错误信息（参考 content.vue 逻辑）
+      // 错误信息
       errorInfo: {
         visible: false,
         message: '',
@@ -113,11 +99,11 @@ export default {
     };
   },
   computed: {
-    // 计算总页数
+    // 总页数
     totalPages() {
       return Math.ceil(this.logs.length / this.logsPerPage);
     },
-    // 计算当前页应显示的日志
+    // 当前页要显示的日志
     pagedLogs() {
       const start = (this.currentPage - 1) * this.logsPerPage;
       const end = start + this.logsPerPage;
@@ -126,19 +112,13 @@ export default {
   },
   methods: {
     //--------------------------------------
-    //         WebSocket相关方法
+    //         WebSocket相关
     //--------------------------------------
-
-    // 初始化WebSocket连接
     initWebSocket() {
       WebSocketService.connect();
-      // 注册消息处理回调
       WebSocketService.onMessage(this.handleWebSocketMessage);
-      // 监听WebSocket连接状态
       this.checkConnectionStatus();
     },
-
-    // 周期性检测WebSocket连接状态
     checkConnectionStatus() {
       this.wsConnected = WebSocketService.isConnected();
       setTimeout(() => {
@@ -146,32 +126,33 @@ export default {
       }, 2000);
     },
 
-    // 处理WebSocket消息
+    // 处理收到的WebSocket消息
     handleWebSocketMessage(data) {
       console.log('收到WebSocket消息:', data);
 
-      // 如果有错误属性，显示错误
+      // 如果有错误属性
       if (data && data.error === true) {
         this.showError(data.message || '通信错误', data.details);
         return;
       }
 
-      // 如果数据是字符串，尝试解析
+      // 若是字符串，尝试JSON解析；若失败，则按纯文本日志处理
       if (typeof data === 'string') {
+        let textData = data.trim();
         try {
-          data = JSON.parse(data);
+          // 如果能解析为JSON，则继续下面逻辑
+          data = JSON.parse(textData);
         } catch (e) {
-          console.error('无法解析服务器响应:', e);
-          this.showError('无法解析服务器响应', data);
+          // 无法解析JSON => 纯文本日志解析
+          this.parseTextLogs(textData);
           return;
         }
       }
 
-      // 如果有params字段，则逐项处理
+      // 如果有 params 字段，则逐项处理
       if (data && data.params) {
         data.params.forEach(param => {
           if (param.result === 'success') {
-            // 根据key更新UI状态
             this.updateParameterValue(param.key, param.value);
           } else {
             console.error(`参数 ${param.key} 获取失败: ${param.error || '未知错误'}`);
@@ -186,11 +167,52 @@ export default {
       }
     },
 
-    // 根据参数名更新对应的值
+    //--------------------------------------
+    //         文本日志解析
+    //--------------------------------------
+    parseTextLogs(textData) {
+      // 如果以 '.' 结尾，说明后端还没发送完，需要再次请求
+      let needMore = false;
+      if (textData.endsWith('.')) {
+        needMore = true;
+        // 去掉末尾的 '.'
+        textData = textData.slice(0, -1).trim();
+      }
+// 按换行拆分每一条日志记录
+      const lines = textData.split('\n').filter(line => line.trim() !== '');
+      // 使用逗号作为分隔符，拆分为【事件、分类、时间、描述】
+      const newLogs = lines.map(line => {
+        const parts = line.trim().split(',').map(item => item.trim());
+        // 取各部分，若描述中包含多个逗号，则合并它们
+        const event = parts[0] || '';
+        const category = parts[1] || '';
+        const time = parts[2] || '';
+        const description = parts.slice(3).join(', ');
+        return {
+          event,
+          category,
+          time,
+          description
+        };
+      });
+     
+      // 将解析到的日志追加到 logs
+      this.logs = this.logs.concat(newLogs);
+
+      // 若后端尚未发送完 => 再次请求
+      if (needMore) {
+        setTimeout(() => {
+          this.refreshLogs(false); // 这里传 false，表示不弹“刷新成功”
+        }, 300);
+      }
+    },
+
+    //--------------------------------------
+    //         更新参数
+    //--------------------------------------
     updateParameterValue(key, value) {
-      // 当key === 'log' 时，将后端传回的日志数据更新到 logs
       if (key === 'log') {
-        // 假设后端返回的 value 是一个数组 [{ event, category, time, description }, ...]
+        // 后端返回的 value 是数组 => 直接替换
         this.logs = Array.isArray(value) ? value : [];
       } else {
         console.log(`未处理的参数: ${key} = ${value}`);
@@ -198,42 +220,11 @@ export default {
     },
 
     //--------------------------------------
-    //         日志相关方法
+    //         日志操作
     //--------------------------------------
-
-    // 获取当前时间
-    setCurrentTime() {
-      const now = new Date();
-      this.newTime = now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
-    },
-
-    // 添加本地日志（示例功能）
-    addLog() {
-      if (!this.newEvent || !this.newCategory || !this.newDescription || !this.newTime) {
-        alert('请填写完整信息');
-        return;
-      }
-      const newLog = {
-        event: this.newEvent,
-        category: this.newCategory,
-        time: this.newTime,
-        description: this.newDescription
-      };
-      this.logs.push(newLog);
-
-      // 清空输入框
-      this.newEvent = '';
-      this.newCategory = '';
-      this.newTime = '';
-      this.newDescription = '';
-    },
-
-    // 删除本地日志（示例功能）
     deleteLog(index) {
       this.logs.splice(index, 1);
     },
-
-    // 分页切换
     changePage(direction) {
       if (direction === 'prev' && this.currentPage > 1) {
         this.currentPage--;
@@ -245,24 +236,16 @@ export default {
     //--------------------------------------
     //         刷新日志
     //--------------------------------------
-
-    // 发送get命令，请求后端返回日志
-    refreshLogs() {
-      // 日志key是 "log"
+    refreshLogs(showModal = true) {
       const keys = ['log'];
-
-      // 保存操作以便重试
-      this.lastOperation = {
-        type: 'get',
-        data: keys
-      };
-
-      // 发送get命令
+      this.lastOperation = { type: 'get', data: keys };
       WebSocketService.sendGetCommand(keys);
-      this.showSuccess();
-    },
 
-    // 显示刷新成功弹窗
+      // 是否弹“刷新成功”
+      if (showModal) {
+        this.showSuccess();
+      }
+    },
     showSuccess() {
       this.isModalVisible = true;
       setTimeout(() => {
@@ -274,24 +257,14 @@ export default {
     },
 
     //--------------------------------------
-    //         错误处理相关
+    //         错误处理
     //--------------------------------------
-
-    // 显示错误信息
     showError(message, details = '') {
-      this.errorInfo = {
-        visible: true,
-        message: message,
-        details: details
-      };
+      this.errorInfo = { visible: true, message, details };
     },
-
-    // 隐藏错误提示
     hideErrorModal() {
       this.errorInfo.visible = false;
     },
-
-    // 重试上次操作
     retryLastOperation() {
       if (this.lastOperation.type && this.lastOperation.data) {
         if (this.lastOperation.type === 'get') {
@@ -304,23 +277,21 @@ export default {
     }
   },
   mounted() {
-    // 初始化WebSocket连接
+    // 初始化WebSocket
     this.initWebSocket();
-
-    // 等待WebSocket连接建立后，自动刷新日志
+    // 等待连接后再请求一次日志
     setTimeout(() => {
       this.refreshLogs();
     }, 1000);
   },
   beforeUnmount() {
-    // 组件卸载前注销WebSocket消息回调
     WebSocketService.offMessage(this.handleWebSocketMessage);
   }
 };
 </script>
 
 <style scoped>
-/* 与 content.vue 中相同的样式结构，保留连接状态与错误提示弹窗的风格 */
+/* 与 content.vue 保持一致的样式结构 */
 
 .content-wrapper {
   flex: 1;
@@ -354,26 +325,6 @@ export default {
 }
 .connection-status.connected {
   background-color: #ccffcc;
-}
-
-/* 日志表单 */
-.log-form {
-  margin-bottom: 20px;
-}
-.log-form input {
-  margin: 5px 0;
-  padding: 8px;
-  width: 45%;
-}
-.log-form button {
-  padding: 8px 16px;
-  background-color: #003366;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-.log-form button:hover {
-  background-color: #004488;
 }
 
 /* 日志列表 */
