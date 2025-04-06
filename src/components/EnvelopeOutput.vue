@@ -86,10 +86,9 @@ export default {
   name: 'EnvelopeOutput',
   data() {
     return {
-      // 包络输出相关数据
-      // 对应后台返回的参数使用 drmChannelInfo 前缀
-      gainValue: -6.0,       // 对应 key: drmChannelInfo.RfEnvelopeLevel
-      dcCompensation: 0.0,   // 对应 key: drmChannelInfo.RfEnvelopeDC
+      // 包络输出相关数据（使用 exciter 前缀）
+      gainValue: -6.0,       // 对应 key: exciter.rfEnvelopeLevel
+      dcCompensation: 0.0,   // 对应 key: exciter.rfEnvelopeDC
 
       // 弹窗控制
       isModalVisible: false,
@@ -156,15 +155,15 @@ export default {
     },
     // ----------------------- 参数更新 -----------------------
     updateParameterValue(key, value) {
-      // 如果 key 带有 drmChannelInfo. 前缀，则去除该前缀
-      if (key.startsWith('drmChannelInfo.')) {
-        key = key.slice('drmChannelInfo.'.length);
+      // 如果 key 带有 "exciter." 前缀，则去除该前缀
+      if (key.startsWith('exciter.')) {
+        key = key.slice('exciter.'.length);
       }
       switch(key) {
-        case 'RfEnvelopeLevel':
+        case 'rfEnvelopeLevel':
           this.gainValue = parseFloat(value);
           break;
-        case 'RfEnvelopeDC':
+        case 'rfEnvelopeDC':
           this.dcCompensation = parseFloat(value);
           break;
         default:
@@ -175,10 +174,10 @@ export default {
     },
     // ----------------------- 应用操作 -----------------------
     applyEnvelope() {
-      // 组装 set 命令对象，使用 drmChannelInfo 前缀
+      // 组装 set 命令对象，使用 exciter 前缀
       const data = {
-        'drmChannelInfo.RfEnvelopeLevel': parseFloat(this.gainValue).toFixed(1),
-        'drmChannelInfo.RfEnvelopeDC': parseFloat(this.dcCompensation).toFixed(1)
+        'exciter.rfEnvelopeLevel': parseFloat(this.gainValue).toFixed(1),
+        'exciter.rfEnvelopeDC': parseFloat(this.dcCompensation).toFixed(1)
       };
       this.lastOperation = { type: 'set', data: data };
       WebSocketService.sendSetCommand(data);
@@ -222,8 +221,8 @@ export default {
     // 延时获取初始值，使用带前缀的 key
     setTimeout(() => {
       const keys = [
-        'drmChannelInfo.RfEnvelopeLevel',
-        'drmChannelInfo.RfEnvelopeDC'
+        'exciter.rfEnvelopeLevel',
+        'exciter.rfEnvelopeDC'
       ];
       this.lastOperation = { type: 'get', data: keys };
       WebSocketService.sendGetCommand(keys);
