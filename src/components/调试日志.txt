@@ -1,22 +1,44 @@
+时钟同步    
 
-状态概览  没问题
+密码    后端，后面要问李正祥老师
 
-日志      应该没有问题了（现在是刷新一下，增加100条，我也不清楚怎么这么巧她正好是100条，还有一个就是刷新一下是删除前面的还是继续叠加，这个有待确认）
+固件升级   是选中一个文件，然后以4096个字节轮番发送这个
 
-系统设置  这个不做
 
-网络设置  没问题
 
-复用流输入 没问题
 
-调制输出   没问题
 
-射频输出   没问题
 
-包络输出   没问题
+Command: set, Key: {"iqRecordCommand.recordCommand": "START", "iqRecordCommand.recordTime": "2"}
+Sending to TCP server: set {'iqRecordCommand.recordCommand': 'START', 'iqRecordCommand.recordTime': '2'}
+ret=81
+Received from TCP server: {"command": "set", "params": [{"key": "iqRecordCommand.recordCommand", "value": "START", "result": "success"}, {"key": "iqRecordCommand.recordTime", "value": "2", "result": "success"}]}
+Command: get, Key: ["iqRecordStatus.recordStatus", "iqRecordStatus.recordedTime", "iqRecordStatus.recordFileName", "iqRecordStatus.recordFilePath"]
+Sending to TCP server: get ['iqRecordStatus.recordStatus', 'iqRecordStatus.recordedTime', 'iqRecordStatus.recordFileName', 'iqRecordStatus.recordFilePath']
+ret=132
+Received from TCP server: {"command": "get", "params": [{"key": "iqRecordStatus.recordStatus", "value": "RECORDING", "result": "success"}, {"key": "iqRecordStatus.recordedTime", "value": "0", "result": "success"}, {"key": "iqRecordStatus.recordFileName", "value": "", "result": "success"}, {"key": "iqRecordStatus.recordFilePath", "value": "/record/", "result": "success"}]}
+Command: get, Key: ["iqRecordStatus.recordStatus", "iqRecordStatus.recordedTime", "iqRecordStatus.recordFileName", "iqRecordStatus.recordFilePath"]
+Sending to TCP server: get ['iqRecordStatus.recordStatus', 'iqRecordStatus.recordedTime', 'iqRecordStatus.recordFileName', 'iqRecordStatus.recordFilePath']
+ret=132
+Received from TCP server: {"command": "get", "params": [{"key": "iqRecordStatus.recordStatus", "value": "RECORDING", "result": "success"}, {"key": "iqRecordStatus.recordedTime", "value": "0", "result": "success"}, {"key": "iqRecordStatus.recordFileName", "value": "", "result": "success"}, {"key": "iqRecordStatus.recordFilePath", "value": "/record/", "result": "success"}]}
+Command: set, Key: {"iqRecordCommand.recordCommand": "STOP"}
+Sending to TCP server: set {'iqRecordCommand.recordCommand': 'STOP'}
+ret=45
+Received from TCP server: {"command": "set", "params": [{"key": "iqRecordCommand.recordCommand", "value": "STOP", "result": "success"}]}
 
-峰均比抑制 没问题
 
-基带录制   set一样的，但是具体这个是不是应该有get，不太清楚
 
-时钟同步  没问题
+{"command":"set","key":{"iqRecordCommand.recordCommand":"START","iqRecordCommand.recordTime":"3"}} 
+正确的
+
+{"command":"set","key":{"iqRecordCommand.recordCommand":"START","iqRecordCommand.recordTime":"2"}}
+错误的
+
+
+
+
+{"command":"get","key":["iqRecordStatus.recordStatus","iqRecordStatus.recordedTime","iqRecordStatus.recordFileName","iqRecordStatus.recordFilePath"]} 
+正确的
+
+{"command":"get","key":["iqRecordStatus.recordStatus","iqRecordStatus.recordedTime","iqRecordStatus.recordFileName","iqRecordStatus.recordFilePath"]}
+错误的
