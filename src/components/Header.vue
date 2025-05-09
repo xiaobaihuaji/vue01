@@ -45,15 +45,15 @@
                 <div class="submenu-item" @click="handlePageChange('ModulationOutput')">
                   {{ $t('modulationOutput') }} <!-- 动态文本 -->
                 </div>
-                <div class="submenu-item" @click="handlePageChange('RFOutput')">
-                  {{ $t('rfOutput') }} <!-- 动态文本 -->
+                <!-- <div class="submenu-item" @click="handlePageChange('RFOutput')">
+                  {{ $t('rfOutput') }} 
                 </div>
                 <div class="submenu-item" @click="handlePageChange('EnvelopeOutput')">
-                  {{ $t('envelopeOutput') }} <!-- 动态文本 -->
+                  {{ $t('envelopeOutput') }} 
                 </div>
                 <div class="submenu-item" @click="handlePageChange('PAPR')">
-                  {{ $t('PAPR') }} <!-- 动态文本 -->
-                </div>
+                  {{ $t('PAPR') }} 
+                </div> -->
                 <div class="submenu-item" @click="handlePageChange('BasebandRecording')">
                   {{ $t('BasebandRecording') }} <!-- 动态文本 -->
                 </div>
