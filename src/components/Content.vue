@@ -21,7 +21,7 @@
             <td>固件升级</td>
             <td><button @click="startFirmwareUpgrade">固件升级</button></td>
           </tr>
-          <tr>
+          <!-- <tr>
             <td>系统日期</td>
             <td class="system-time-date">
               <input type="text" v-model="systemDate" placeholder="YYYY-MM-DD">
@@ -34,7 +34,7 @@
               <input type="text" v-model="systemTime" placeholder="HH:MM:SS">
               <button @click="applySystemTime">应用系统时间</button>
             </td>
-          </tr>
+          </tr> -->
         </table>
 
         <!-- 隐藏的文件选择输入 -->
@@ -50,11 +50,11 @@
           <button @click="refreshStatus">刷新状态</button>
         </div>
 
-        <!-- 通用操作成功弹窗 -->
+        <!-- 通用操作成功弹窗
         <div v-if="isModalVisible" class="modal">
           <p>操作成功！</p>
           <button @click="hideModal">关闭</button>
-        </div>
+        </div> -->
 
         <!-- 固件升级中弹窗 -->
         <div v-if="isUpgrading" class="modal">
@@ -299,3 +299,4 @@ button:hover { background:#004488 }
 .error-details { font-size:.9em; margin-top:10px; padding:8px; background:rgba(0,0,0,.1); border-radius:3px }
 .modal-buttons { display:flex; justify-content:center; gap:10px; margin-top:15px }
 </style>
+

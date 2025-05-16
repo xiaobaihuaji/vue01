@@ -60,10 +60,10 @@
         </div>
 
         <!-- 弹窗提示 -->
-        <div v-if="isModalVisible" class="modal">
+        <!-- <div v-if="isModalVisible" class="modal">
           <p>{{ modalMessage }}</p>
           <button @click="hideModal">关闭</button>
-        </div>
+        </div> -->
 
         <!-- 错误提示弹窗 -->
         <div v-if="errorInfo.visible" class="modal error-modal">

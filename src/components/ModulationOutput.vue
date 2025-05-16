@@ -19,7 +19,6 @@
               <th>项目</th>
               <th>值/设置</th>
             </tr>
-            <!-- PSM 模式隐藏 “输出使能” -->
             <tr v-if="!isPSM">
               <td>输出使能</td>
               <td>
@@ -70,7 +69,6 @@
                 </label>
               </td>
             </tr>
-            <!-- PSM 模式隐藏 “调幅使能” -->
             <tr v-if="!isPSM">
               <td>调幅使能</td>
               <td>
@@ -156,8 +154,8 @@
           <button @click="applyPAPR">应用峰均比抑制设置</button>
         </section>
 
-        <!-- ============== 调制输出参数 ============== -->
-        <h3>调制输出参数</h3>
+        <!-- ============== 调制输出参数（只读） ============== -->
+        <!-- <h3>调制输出参数</h3>
         <table>
           <tr>
             <th>项目</th>
@@ -166,7 +164,7 @@
           <tr>
             <td>DRM模式</td>
             <td>
-              <select v-model="currentDRMMode" class="custom-select">
+              <select v-model="currentDRMMode" class="custom-select" disabled>
                 <option v-for="mode in drmModes" :key="mode" :value="mode">{{ mode }}</option>
               </select>
             </td>
@@ -174,45 +172,101 @@
           <tr>
             <td>频谱带宽</td>
             <td>
-              <select v-model="spectrumBandwidth" class="custom-select">
-                <option v-for="bandwidth in bandwidths" :key="bandwidth" :value="bandwidth">{{ bandwidth }}</option>
+              <select v-model="spectrumBandwidth" class="custom-select" disabled>
+                <option v-for="bw in bandwidths" :key="bw" :value="bw">{{ bw }}</option>
               </select>
             </td>
           </tr>
           <tr>
             <td>SDC模式</td>
             <td>
-              <select v-model="sdcMode" class="custom-select">
-                <option v-for="mode in sdcModes" :key="mode" :value="mode">{{ mode }}</option>
+              <select v-model="sdcMode" class="custom-select" disabled>
+                <option v-for="m in sdcModes" :key="m" :value="m">{{ m }}</option>
               </select>
             </td>
           </tr>
           <tr>
             <td>MSC模式</td>
             <td>
-              <select v-model="mscMode" class="custom-select">
-                <option v-for="mode in mscModes" :key="mode" :value="mode">{{ mode }}</option>
+              <select v-model="mscMode" class="custom-select" disabled>
+                <option v-for="m in mscModes" :key="m" :value="m">{{ m }}</option>
               </select>
             </td>
           </tr>
           <tr>
             <td>MSC保护等级A</td>
             <td>
-              <select v-model="mscProtectionLevelA" class="custom-select">
-                <option v-for="level in protectionLevels" :key="level" :value="level">{{ level }}</option>
+              <select v-model="mscProtectionLevelA" class="custom-select" disabled>
+                <option v-for="lvl in protectionLevels" :key="lvl" :value="lvl">{{ lvl }}</option>
               </select>
             </td>
           </tr>
           <tr>
             <td>MSC保护等级B</td>
             <td>
-              <select v-model="mscProtectionLevelB" class="custom-select">
-                <option v-for="level in protectionLevels" :key="level" :value="level">{{ level }}</option>
+              <select v-model="mscProtectionLevelB" class="custom-select" disabled>
+                <option v-for="lvl in protectionLevels" :key="lvl" :value="lvl">{{ lvl }}</option>
               </select>
             </td>
           </tr>
-        </table>
-        <button @click="applyModulationSettings">应用调制输出设置</button>
+        </table> -->
+        <h3>调制输出参数</h3>
+<table>
+  <tr>
+    <th>项目</th>
+    <th>值/设置</th>
+  </tr>
+  <tr>
+    <td>DRM模式</td>
+    <td>
+      <select v-model="currentDRMMode" class="custom-select no-arrow" disabled>
+        <option v-for="mode in drmModes" :key="mode" :value="mode">{{ mode }}</option>
+      </select>
+    </td>
+  </tr>
+  <tr>
+    <td>频谱带宽</td>
+    <td>
+      <select v-model="spectrumBandwidth" class="custom-select no-arrow" disabled>
+        <option v-for="bw in bandwidths" :key="bw" :value="bw">{{ bw }}</option>
+      </select>
+    </td>
+  </tr>
+  <tr>
+    <td>SDC模式</td>
+    <td>
+      <select v-model="sdcMode" class="custom-select no-arrow" disabled>
+        <option v-for="m in sdcModes" :key="m" :value="m">{{ m }}</option>
+      </select>
+    </td>
+  </tr>
+  <tr>
+    <td>MSC模式</td>
+    <td>
+      <select v-model="mscMode" class="custom-select no-arrow" disabled>
+        <option v-for="m in mscModes" :key="m" :value="m">{{ m }}</option>
+      </select>
+    </td>
+  </tr>
+  <tr>
+    <td>MSC保护等级A</td>
+    <td>
+      <select v-model="mscProtectionLevelA" class="custom-select no-arrow" disabled>
+        <option v-for="lvl in protectionLevels" :key="lvl" :value="lvl">{{ lvl }}</option>
+      </select>
+    </td>
+  </tr>
+  <tr>
+    <td>MSC保护等级B</td>
+    <td>
+      <select v-model="mscProtectionLevelB" class="custom-select no-arrow" disabled>
+        <option v-for="lvl in protectionLevels" :key="lvl" :value="lvl">{{ lvl }}</option>
+      </select>
+    </td>
+  </tr>
+</table>
+
+        <button disabled class="disabled">应用调制输出设置</button>
 
         <!-- ============== DPD及延时操作区域 ============== -->
         <section v-if="showDPDSection">
@@ -301,10 +355,6 @@
           </div>
         </div>
 
-        <!--
-        基带数据录制部分原先代码现已合并到其他功能中，因此不在此重复。
-        -->
-
       </div>
     </div>
   </div>
@@ -317,24 +367,19 @@ export default {
   name: "ModulationOutput",
   data() {
     return {
-      // ====== exciterType 用于模式判定 ======
       exciterType: "",
 
-      // ====== 射频输出 ======
       rfOutputEnabled: false,
       rfOutputFreq: 15.120,
       rfOutputPower: -8.4,
       rfPMEnable: false,
       rfAMEnable: false,
 
-      // ====== 包络输出 ======
       rfEnvelopeLevel: -6.0,
       rfEnvelopeDC: 0.0,
 
-      // ====== 峰均比抑制 ======
       peakToAverageSuppressLevel: "7.0",
 
-      // ====== 调制输出 ======
       currentDRMMode: "A",
       drmModes: ["A", "B", "C", "D"],
       spectrumBandwidth: "4.5kHz",
@@ -347,35 +392,22 @@ export default {
       mscProtectionLevelB: "0",
       protectionLevels: ["0", "1", "2", "3"],
 
-      // ====== DPD及延时 ======
       isFrequencyConsistent: false,
       inputFrequency: 0,
       dpdResult: "",
       delayValue: "0.0",
 
-      // ====== 基带数据录制（保留状态） ======
-      recordingTime: 0,
-      recordedTimeRecord: 0,
-      isRecordingRecord: false,
-      isModalRecordVisible: false,
-      recordData: "",
-      recordStatus: "",
-      recordFileName: "",
-      recordFilePath: "",
-
-      // ====== 全局WebSocket连接及弹窗 ======
       wsConnected: false,
-      errorInfo: { visible: false, message: "", details: "" },
       processingModal: { show: false, message: "" },
       confirmModal: { show: false, message: "", onConfirm: null },
-      lastOperation: { type: "", data: null },
-      showUpDownButtons: false,
       isModalVisible: false,
-      modalMessage: ""
+      modalMessage: "",
+      errorInfo: { visible: false, message: "", details: "" },
+      lastOperation: { type: "", data: null },
+      showUpDownButtons: false
     };
   },
   computed: {
-    // 模式判断
     isNONE()  { return this.exciterType === "NONE"; },
     isDDS()   { return this.exciterType === "DDS"; },
     isDX100() { return this.exciterType === "DX100"; },
@@ -383,7 +415,6 @@ export default {
     isPSM()   { return this.exciterType === "PSM"; },
     isDEBUG(){ return this.exciterType === "DEBUG"; },
 
-    // 各区域是否显示
     showRFSection()       { return this.isDDS || this.isPSM || this.isDEBUG; },
     showEnvelopeSection() { return this.isDDS || this.isPSM || this.isDEBUG; },
     showPAPRSection()     { return this.isNONE || this.isDX200 || this.isDDS || this.isDEBUG; },
@@ -391,7 +422,6 @@ export default {
     showDelaySection()    { return this.isPSM || this.isDDS || this.isDEBUG; }
   },
   methods: {
-    // ---------- WebSocket 连接与状态监控 ----------
     initWebSocket() {
       WebSocketService.connect();
       WebSocketService.onMessage(this.handleWebSocketMessage);
@@ -401,8 +431,6 @@ export default {
       this.wsConnected = WebSocketService.isConnected();
       setTimeout(() => this.checkConnectionStatus(), 2000);
     },
-
-    // ---------- WebSocket 消息处理 ----------
     handleWebSocketMessage(data) {
       if (data && data.error === true) {
         this.showError(data.message || "通信错误", data.details);
@@ -429,76 +457,37 @@ export default {
           this.updateParameterValue(key, data[key]);
         });
       }
-      this.handleRecordData(data);
     },
-    handleRecordData(data) {
-      if (this.isRecordingRecord) {
-        let text;
-        if (typeof data === "object") {
-          try { text = JSON.stringify(data); }
-          catch (e) { text = String(data); }
-        } else { text = data; }
-        this.recordData += text + "\n";
-      }
-    },
-
-    // ---------- 参数更新 ----------
     updateParameterValue(key, value) {
-      // 新增 exciterType
       if (key === "exciter.exciterType") {
         this.exciterType = value;
         return;
       }
       if (key.startsWith("exciter.")) {
-        let subKey = key.slice("exciter.".length);
-        if (subKey.startsWith("rfOutput")) {
-          if (subKey === "rfOutputEnable") this.rfOutputEnabled = value;
-          else if (subKey === "rfOutputFreq") this.rfOutputFreq = parseFloat(value);
-          else if (subKey === "rfOutputPower") this.rfOutputPower = parseFloat(value);
-          else if (subKey === "rfPMEnable") this.rfPMEnable = value;
-          else if (subKey === "rfAMEnable") this.rfAMEnable = value;
-        } else if (subKey === "rfEnvelopeLevel") {
-          this.rfEnvelopeLevel = parseFloat(value);
-        } else if (subKey === "rfEnvelopeDC") {
-          this.rfEnvelopeDC = parseFloat(value);
-        } else if (subKey === "dpdInputFreq") {
-          this.dpdResult = value;
-        } else if (subKey === "dpdFreqSametoRf") {
-          // no-op
-        } else if (subKey === "delayValue") {
+        let sub = key.slice(8);
+        if (sub === "rfOutputEnable") this.rfOutputEnabled = value;
+        else if (sub === "rfOutputFreq") this.rfOutputFreq = parseFloat(value);
+        else if (sub === "rfOutputPower") this.rfOutputPower = parseFloat(value);
+        else if (sub === "rfPMEnable") this.rfPMEnable = value;
+        else if (sub === "rfAMEnable") this.rfAMEnable = value;
+        else if (sub === "rfEnvelopeLevel") this.rfEnvelopeLevel = parseFloat(value);
+        else if (sub === "rfEnvelopeDC") this.rfEnvelopeDC = parseFloat(value);
+        else if (sub === "dpdInputFreq") this.dpdResult = value;
+        else if (sub === "delayValue") {
           this.delayValue = value;
-          this.hideProcessingModal();
-          this.showSuccess("延时参数估计成功！");
-        } else if (subKey === "delayReset") {
-          this.hideProcessingModal();
-          this.showSuccess("延时参数复位成功！");
         }
       } else if (key.startsWith("digitalIqOutput.peakToAverageSuppressLevel")) {
         this.peakToAverageSuppressLevel = parseFloat(value).toFixed(1);
-        this.showSuccess("峰均比抑制设置成功！");
       } else if (key.startsWith("modulation.")) {
-        let subKey = key.slice("modulation.".length);
-        if (subKey === "currentDRMMode") this.currentDRMMode = value;
-        else if (subKey === "spectrumBandwidth") this.spectrumBandwidth = value;
-        else if (subKey === "sdcMode") this.sdcMode = value;
-        else if (subKey === "mscMode") this.mscMode = value;
-        else if (subKey === "mscProtectionLevelA") this.mscProtectionLevelA = value;
-        else if (subKey === "mscProtectionLevelB") this.mscProtectionLevelB = value;
-      } else if (key.startsWith("iqRecordStatus.")) {
-        let subKey = key.slice("iqRecordStatus.".length);
-        if (subKey === "recordStatus") this.recordStatus = value;
-        else if (subKey === "recordedTime") {
-          if (!this.isRecordingRecord) this.recordedTimeRecord = parseInt(value);
-        } else if (subKey === "recordFileName") {
-          if (!this.fileName) this.fileName = value;
-          this.recordFileName = value;
-        } else if (subKey === "recordFilePath") {
-          this.recordFilePath = value;
-        }
+        let sub = key.slice(11);
+        if (sub === "currentDRMMode") this.currentDRMMode = value;
+        else if (sub === "spectrumBandwidth") this.spectrumBandwidth = value;
+        else if (sub === "sdcMode") this.sdcMode = value;
+        else if (sub === "mscMode") this.mscMode = value;
+        else if (sub === "mscProtectionLevelA") this.mscProtectionLevelA = value;
+        else if (sub === "mscProtectionLevelB") this.mscProtectionLevelB = value;
       }
     },
-
-    // ---------- 各类设置与操作 ----------
     applyRFOutput() {
       const data = {
         "exciter.rfOutputEnable": this.rfOutputEnabled,
@@ -513,8 +502,8 @@ export default {
     },
     applyEnvelope() {
       const data = {
-        "exciter.rfEnvelopeLevel": parseFloat(this.rfEnvelopeLevel).toFixed(1),
-        "exciter.rfEnvelopeDC": parseFloat(this.rfEnvelopeDC).toFixed(1)
+        "exciter.rfEnvelopeLevel": this.rfEnvelopeLevel.toFixed(1),
+        "exciter.rfEnvelopeDC": this.rfEnvelopeDC.toFixed(1)
       };
       this.lastOperation = { type: "set", data };
       WebSocketService.sendSetCommand(data);
@@ -522,56 +511,34 @@ export default {
     },
     applyPAPR() {
       const v = parseFloat(this.peakToAverageSuppressLevel);
-      if (isNaN(v)) { this.showError("输入无效", "请输入有效数字"); return; }
-      if (v < 6.0 || v > 12.0) { this.showError("调整失败", "峰均比范围为 6.0 ~ 12.0"); return; }
-      const val = v.toFixed(1);
-      const data = { "digitalIqOutput.peakToAverageSuppressLevel": val };
+      if (isNaN(v) || v < 6 || v > 12) {
+        this.showError("峰均比范围：6.0~12.0");
+        return;
+      }
+      const data = { "digitalIqOutput.peakToAverageSuppressLevel": v.toFixed(1) };
       this.lastOperation = { type: "set", data };
       WebSocketService.sendSetCommand(data);
       this.showSuccess("峰均比抑制设置成功！");
     },
-    applyModulationSettings() {
-      const data = {
-        "modulation.currentDRMMode": this.currentDRMMode,
-        "modulation.spectrumBandwidth": this.spectrumBandwidth,
-        "modulation.sdcMode": this.sdcMode,
-        "modulation.mscMode": this.mscMode,
-        "modulation.mscProtectionLevelA": this.mscProtectionLevelA,
-        "modulation.mscProtectionLevelB": this.mscProtectionLevelB
-      };
-      this.lastOperation = { type: "set", data };
-      WebSocketService.sendSetCommand(data);
-      this.showSuccess("调制输出设置成功！");
-    },
-    toggleFrequency() {
-      // “输入频率与输出频率一致”切换逻辑
-    },
     estimateDPD() {
-      this.showProcessingModal("DPD参数估计中...");
       this.lastOperation = { type: "get", data: ["exciter.dpdInputFreq"] };
       WebSocketService.sendGetCommand(["exciter.dpdInputFreq"]);
     },
     resetDPD() {
-      this.showProcessingModal("DPD参数复位中...");
-      this.lastOperation = { type: "set", data: { "exciter.dpdFreqSametoRf": false } };
-      WebSocketService.sendSetCommand({ "exciter.dpdFreqSametoRf": false });
+      const data = { "exciter.dpdFreqSametoRf": false };
+      this.lastOperation = { type: "set", data };
+      WebSocketService.sendSetCommand(data);
     },
     estimateDelay() {
-      this.showProcessingModal("延时参数估计中...");
       this.lastOperation = { type: "get", data: ["exciter.delayValue"] };
       WebSocketService.sendGetCommand(["exciter.delayValue"]);
     },
-    resetDelay() {
-      this.showProcessingModal("延时参数复位中...");
+    tryResetDelay() {
       this.lastOperation = { type: "set", data: { "exciter.delayReset": true } };
       WebSocketService.sendSetCommand({ "exciter.delayReset": true });
     },
-    tryResetDelay() {
-      this.confirmModal = {
-        show: true,
-        message: "确定要复位延时参数吗？",
-        onConfirm: this.resetDelay
-      };
+    cancelProcessing() {
+      this.processingModal.show = false;
     },
     confirmModalConfirm() {
       this.confirmModal.onConfirm();
@@ -580,84 +547,13 @@ export default {
     confirmModalCancel() {
       this.confirmModal.show = false;
     },
-
-    // ---------- 基带录制（状态&下载） ----------
-    startRecordingRecord() {
-      if (this.isRecordingRecord) return;
-      if (!this.recordingTime || this.recordingTime <= 0) return;
-      this.isRecordingRecord = true;
-      this.recordedTimeRecord = 0;
-      this.recordData = "";
-      WebSocketService.sendSetCommand({
-        "iqRecordCommand.recordCommand": "START",
-        "iqRecordCommand.recordTime": this.recordingTime.toString()
-      });
-      this.timer = setInterval(() => {
-        if (this.recordedTimeRecord < this.recordingTime) this.recordedTimeRecord++;
-        else this.stopRecordingRecord();
-      }, 1000);
-      this.pollTimer = setInterval(() => {
-        WebSocketService.sendGetCommand([
-          "iqRecordStatus.recordStatus",
-          "iqRecordStatus.recordedTime",
-          "iqRecordStatus.recordFileName",
-          "iqRecordStatus.recordFilePath"
-        ]);
-      }, 1000);
-    },
-    stopRecordingRecord() {
-      if (this.timer) { clearInterval(this.timer); this.timer = null; }
-      if (this.pollTimer) { clearInterval(this.pollTimer); this.pollTimer = null; }
-      WebSocketService.sendSetCommand({ "iqRecordCommand.recordCommand": "STOP" });
-      this.isRecordingRecord = false;
-      this.showRecordingComplete();
-    },
-    showRecordingComplete() {
-      this.isModalRecordVisible = true;
-      setTimeout(() => this.isModalRecordVisible = false, 1000);
-    },
-    downloadFile() {
-      if (this.recordFilePath && this.recordFileName) {
-        const linuxBase = "/home/ecdav/DRM_Modu_bin/record";
-        let relative = this.recordFilePath.startsWith(linuxBase)
-          ? this.recordFilePath.replace(linuxBase, "/record")
-          : this.recordFilePath;
-        if (!relative.endsWith("/")) relative += "/";
-        relative += this.recordFileName;
-        const a = document.createElement("a");
-        a.href = relative;
-        a.download = this.fileName || this.recordFileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      } else {
-        alert("错误：未能获取录制文件信息！");
-      }
-    },
-
-    // ---------- 弹窗 & 错误 ----------
-    showSuccess(message) {
-      this.modalMessage = message;
+    showSuccess(msg) {
+      this.modalMessage = msg;
       this.isModalVisible = true;
-      setTimeout(() => this.hideModal(), 2000);
+      setTimeout(() => (this.isModalVisible = false), 2000);
     },
-    hideModal() {
-      this.isModalVisible = false;
-    },
-    showProcessingModal(message) {
-      this.processingModal = { show: true, message };
-      this.isModalVisible = true;
-    },
-    hideProcessingModal() {
-      this.processingModal.show = false;
-      this.isModalVisible = false;
-    },
-    cancelProcessing() {
-      this.hideProcessingModal();
-      this.lastOperation = { type: "", data: null };
-    },
-    showError(message, details = "") {
-      this.errorInfo = { visible: true, message, details };
+    showError(msg, det = "") {
+      this.errorInfo = { visible: true, message: msg, details: det };
     },
     hideErrorModal() {
       this.errorInfo.visible = false;
@@ -665,16 +561,14 @@ export default {
     retryLastOperation() {
       if (this.lastOperation.type === "get") {
         WebSocketService.sendGetCommand(this.lastOperation.data);
-      } else if (this.lastOperation.type === "set") {
+      } else {
         WebSocketService.sendSetCommand(this.lastOperation.data);
       }
       this.hideErrorModal();
     }
   },
   mounted() {
-    // 初始化 WebSocket 连接及状态监控
     this.initWebSocket();
-    // 延时获取所有初始参数（包括 exciterType）
     setTimeout(() => {
       const keys = [
         "exciter.exciterType",
@@ -693,22 +587,11 @@ export default {
         "modulation.mscProtectionLevelA",
         "modulation.mscProtectionLevelB",
         "exciter.dpdInputFreq",
-        "exciter.dpdFreqSametoRf",
-        "exciter.delayValue",
-        "exciter.delayReset",
-        "iqRecordStatus.recordStatus",
-        "iqRecordStatus.recordedTime",
-        "iqRecordStatus.recordFileName",
-        "iqRecordStatus.recordFilePath"
+        "exciter.delayValue"
       ];
       this.lastOperation = { type: "get", data: keys };
       WebSocketService.sendGetCommand(keys);
     }, 1000);
-  },
-  beforeUnmount() {
-    WebSocketService.offMessage(this.handleWebSocketMessage);
-    if (this.timer) clearInterval(this.timer);
-    if (this.pollTimer) clearInterval(this.pollTimer);
   }
 };
 </script>
@@ -789,19 +672,6 @@ th, td {
   margin-left: 8px;
 }
 
-.up-down-buttons button {
-  background-color: #003366;
-  color: white;
-  border: none;
-  padding: 5px;
-  cursor: pointer;
-  margin-left: 5px;
-}
-.up-down-buttons button:hover {
-  background-color: #004488;
-}
-
-/* 修改按钮样式：取消全宽，调整内边距及间距 */
 button {
   background-color: #003366;
   color: white;
@@ -810,10 +680,10 @@ button {
   border-radius: 3px;
   cursor: pointer;
   margin-top: 10px;
-  width: auto;
 }
-button:hover {
-  background-color: #004488;
+button.disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
 }
 
 .custom-select {
@@ -824,36 +694,21 @@ button:hover {
   background-color: white;
   font-size: 14px;
 }
-.custom-select:focus {
-  outline: none;
-  border-color: #1890ff;
-  box-shadow: 0 0 0 2px rgba(24,144,255,0.2);
-}
 
 .blue-btn {
   background-color: #1890ff;
   margin-right: 5px;
   padding: 8px 12px !important;
 }
-.blue-btn:hover {
-  background-color: #40a9ff;
-}
 .orange-btn {
   background-color: #f5a623;
   margin-right: 5px;
   padding: 8px 12px !important;
 }
-.orange-btn:hover {
-  background-color: #ffbb33;
-}
 .green-btn {
   background-color: #90ee90;
-  color: #333;
   margin-right: 5px;
   padding: 8px 12px !important;
-}
-.green-btn:hover {
-  background-color: #a2fca2;
 }
 
 .modal {
@@ -866,14 +721,12 @@ button:hover {
   padding: 20px;
   border-radius: 5px;
   text-align: center;
-  box-shadow: 0 0 20px rgba(0,0,0,0.2);
   z-index: 1000;
 }
 .modal button {
   margin-top: 10px;
   background-color: white;
   color: #003366;
-  padding: 6px 12px;
 }
 .modal button:hover {
   background-color: #f0f0f0;
@@ -881,12 +734,9 @@ button:hover {
 
 .error-modal {
   background-color: #cc3333;
-  min-width: 300px;
 }
 .error-details {
   font-size: 0.9em;
-  max-width: 400px;
-  word-break: break-all;
   margin-top: 10px;
   padding: 8px;
   background-color: rgba(0,0,0,0.1);
@@ -913,10 +763,7 @@ button:hover {
 .slider {
   position: absolute;
   cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   background-color: #ccc;
   transition: 0.4s;
   border-radius: 34px;
@@ -924,10 +771,8 @@ button:hover {
 .slider:before {
   position: absolute;
   content: "";
-  height: 22px;
-  width: 22px;
-  left: 4px;
-  bottom: 4px;
+  height: 22px; width: 22px;
+  left: 4px; bottom: 4px;
   background-color: white;
   transition: 0.4s;
   border-radius: 50%;
@@ -938,15 +783,12 @@ input:checked + .slider {
 input:checked + .slider:before {
   transform: translateX(30px);
 }
-
-.input-with-unit input {
-  padding-right: 50px;
-  width: 200px;
-}
-.note {
-  margin-left: 10px;
-  color: #666;
-  font-size: 0.9em;
+.custom-select.no-arrow {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: transparent;
+  background-image: none;
+  padding-right: 0; /* 去掉右侧的留白 */
 }
 </style>
-

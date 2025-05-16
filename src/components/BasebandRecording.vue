@@ -446,5 +446,3 @@ input[type="text"] {
 }
 </style>
 
-
-

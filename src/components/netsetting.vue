@@ -55,7 +55,7 @@
         </table>
 
         <!-- 以太网2设置 -->
-        <h2>以太网2设置</h2>
+        <!-- <h2>以太网2设置</h2>
         <table>
           <tr>
             <th>项目</th>
@@ -99,7 +99,7 @@
               <input type="text" v-model="macAddress2" disabled>
             </td>
           </tr>
-        </table>
+        </table> -->
 
         <!-- 应用按钮 -->
         <div class="button-container">
@@ -114,10 +114,10 @@
         </div>
 
         <!-- 刷新成功弹窗提示 -->
-        <div v-if="isRefreshModalVisible" class="modal">
+        <!-- <div v-if="isRefreshModalVisible" class="modal">
           <p>刷新成功！</p>
           <button @click="hideRefreshModal">关闭</button>
-        </div>
+        </div> -->
 
         <!-- 错误提示弹窗 -->
         <div v-if="errorInfo.visible" class="modal error-modal">

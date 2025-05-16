@@ -15,12 +15,11 @@
             <th>项目</th>
             <th>值/设置</th>
           </tr>
-          <!-- 时钟源：改为下拉选择 -->
+          <!-- 时钟源：下拉选择 -->
           <tr>
             <td>时钟源</td>
             <td>
               <select v-model="clockSource">
-                <!-- 注意与后端保持大小写一致，如后端成功示例为 INT_10MHz、EXT_10MHz、GNSS -->
                 <option value="INT_10MHz">INT_10MHz: 内部10MHz</option>
                 <option value="EXT_10MHz">EXT_10MHz: 外部10MHz</option>
                 <option value="GNSS">GNSS</option>
@@ -36,7 +35,7 @@
                 v-model="sfnOffset" 
                 min="-999" max="999"
                 placeholder="请输入SFN偏移"
-                :class="{'error': sfnOffset < -999 || sfnOffset > 999}"
+                :class="{ 'error': sfnOffset < -999 || sfnOffset > 999 }"
               />
               <span>微秒   范围：-999 ~ 999</span>
               <div v-if="sfnOffset < -999 || sfnOffset > 999" class="error-msg">
@@ -44,8 +43,8 @@
               </div>
             </td>
           </tr>
-          <!-- 输出频率校正 -->
-          <tr>
+          <!-- 输出频率校正（仅 debugEnable 为 true 时显示） -->
+          <tr v-if="debugEnable">
             <td>输出频率校正</td>
             <td>
               <input 
@@ -53,7 +52,7 @@
                 v-model="freqCorrection" 
                 min="-1000" max="1000"
                 placeholder="请输入频率校正值"
-                :class="{'error': freqCorrection < -1000 || freqCorrection > 1000}"
+                :class="{ 'error': freqCorrection < -1000 || freqCorrection > 1000 }"
               />
               <span>PPB   范围：-1000 ~ 1000</span>
               <div v-if="freqCorrection < -1000 || freqCorrection > 1000" class="error-msg">
@@ -61,8 +60,8 @@
               </div>
             </td>
           </tr>
-          <!-- VTCXO电压字 -->
-          <tr>
+          <!-- VTCXO电压字（仅 debugEnable 为 true 时显示） -->
+          <tr v-if="debugEnable">
             <td>VTCXO电压字</td>
             <td>
               <input 
@@ -70,7 +69,7 @@
                 v-model="vtcxoWord" 
                 min="0" max="65535"
                 placeholder="请输入VTCXO电压字"
-                :class="{'error': vtcxoWord < 0 || vtcxoWord > 65535}"
+                :class="{ 'error': vtcxoWord < 0 || vtcxoWord > 65535 }"
               />
               <span>范围: 0 ~ 65535</span>
               <div v-if="vtcxoWord < 0 || vtcxoWord > 65535" class="error-msg">
@@ -141,8 +140,7 @@ export default {
   name: 'ClockSync',
   data() {
     return {
-      // 数据项，对应后端参数，统一加前缀 "timeSyncSettings."
-      // 注意大小写：后端成功返回示例为 "INT_10MHz" 或 "EXT_10MHz" 等
+      // 时钟同步各项
       clockSource: 'INT_10MHz',
       sfnOffset: 0,
       freqCorrection: 0,
@@ -152,26 +150,23 @@ export default {
       longitude: '',
       latitude: '',
 
+      // debugEnable：控制频率校正与VTCXO电压字显示
+      debugEnable: false,
+
       // 弹窗控制
       isApplyModalVisible: false,
       isRefreshModalVisible: false,
 
-      // WebSocket相关数据
+      // WebSocket状态 & 错误信息
       wsConnected: false,
-      errorInfo: {
-        visible: false,
-        message: '',
-        details: ''
-      },
-      // 记录上次操作（用于重试）
-      lastOperation: {
-        type: '',
-        data: null
-      }
+      errorInfo: { visible: false, message: '', details: '' },
+
+      // 记录上次操作，用于重试
+      lastOperation: { type: '', data: null }
     };
   },
   methods: {
-    // ----------------------- WebSocket 初始化及状态检测 -----------------------
+    // 初始化 WebSocket
     initWebSocket() {
       WebSocketService.connect();
       WebSocketService.onMessage(this.handleWebSocketMessage);
@@ -179,53 +174,41 @@ export default {
     },
     checkConnectionStatus() {
       this.wsConnected = WebSocketService.isConnected();
-      setTimeout(() => {
-        this.checkConnectionStatus();
-      }, 2000);
+      setTimeout(this.checkConnectionStatus, 2000);
     },
-    // ----------------------- 处理后端消息 -----------------------
+
+    // 处理服务器消息
     handleWebSocketMessage(data) {
-      console.log('收到WebSocket消息:', data);
-      if (data && data.error === true) {
+      if (data && data.error) {
         this.showError(data.message || '通信错误', data.details);
         return;
       }
-      // 尝试解析 JSON 数据
       if (typeof data === 'string') {
-        try {
-          data = JSON.parse(data);
-        } catch (e) {
-          console.error('无法解析响应数据:', e);
+        try { data = JSON.parse(data); }
+        catch (e) {
           this.showError('无法解析服务器响应', data);
           return;
         }
       }
-      // 如果返回数据中包含 params 数组，则逐项处理
-      if (data && data.params) {
-        data.params.forEach(param => {
-          if (param.result === 'success') {
-            this.updateParameterValue(param.key, param.value);
-          } else {
-            console.error(`参数 ${param.key} 获取失败: ${param.error || '未知错误'}`);
-            this.showError(`参数 ${param.key} 获取失败`, param.error || '未知错误');
-          }
+      if (data.params && Array.isArray(data.params)) {
+        data.params.forEach(p => {
+          if (p.result === 'success') this.updateParameterValue(p.key, p.value);
+          else this.showError(`参数 ${p.key} 获取失败`, p.error);
         });
-      } else if (data) {
-        Object.keys(data).forEach(key => {
-          this.updateParameterValue(key, data[key]);
-        });
+      } else {
+        Object.keys(data).forEach(key => this.updateParameterValue(key, data[key]));
       }
     },
-    // ----------------------- 根据返回的参数名更新对应的值 -----------------------
+
+    // 更新各个参数
     updateParameterValue(key, value) {
-      // 如果 key 带有 "timeSyncSettings." 前缀，则去除该前缀
+      // strip prefix if present
       if (key.startsWith('timeSyncSettings.')) {
         key = key.slice('timeSyncSettings.'.length);
       }
       switch (key) {
         case 'clockSource':
-          // 若返回为空则设为默认值 "INT_10MHz"
-          this.clockSource = value === "" ? "INT_10MHz" : value;
+          this.clockSource = value || 'INT_10MHz';
           break;
         case 'sfnOffset':
           this.sfnOffset = parseInt(value);
@@ -248,65 +231,73 @@ export default {
         case 'latitude':
           this.latitude = value;
           break;
+        case 'system.debugEnable':
+          // 接收 debugEnable 字符串 "true"/"false"
+          this.debugEnable = (value === 'true');
+          break;
         default:
           console.log(`未处理的参数: ${key} = ${value}`);
       }
     },
-    // ----------------------- 应用时钟同步设置 -----------------------
+
+    // 应用设置
     applyClockSync() {
-      // 简单范围校验
       if (this.sfnOffset < -999 || this.sfnOffset > 999) {
-        this.showError('SFN偏移超出范围', '范围 -999 ~ 999');
-        return;
+        this.showError('SFN偏移超出范围', '范围 -999 ~ 999'); return;
       }
-      if (this.freqCorrection < -1000 || this.freqCorrection > 1000) {
-        this.showError('频率校正超出范围', '范围 -1000 ~ 1000');
-        return;
+      if (this.debugEnable) {
+        if (this.freqCorrection < -1000 || this.freqCorrection > 1000) {
+          this.showError('频率校正超出范围', '范围 -1000 ~ 1000'); return;
+        }
+        if (this.vtcxoWord < 0 || this.vtcxoWord > 65535) {
+          this.showError('VTCXO电压字超出范围', '范围 0 ~ 65535'); return;
+        }
       }
-      if (this.vtcxoWord < 0 || this.vtcxoWord > 65535) {
-        this.showError('VTCXO电压字超出范围', '范围 0 ~ 65535');
-        return;
-      }
-      // 组装 set 命令对象，所有参数均带 "timeSyncSettings." 前缀，且所有数值转换为字符串
+
       const data = {
         'timeSyncSettings.clockSource': this.clockSource,
-        'timeSyncSettings.sfnOffset': parseInt(this.sfnOffset).toString(),
-        'timeSyncSettings.freqCorrection': parseInt(this.freqCorrection).toString(),
-        'timeSyncSettings.vtcxoWord': parseInt(this.vtcxoWord).toString()
+        'timeSyncSettings.sfnOffset': String(this.sfnOffset),
+        // 仅在 debugEnable 时发送这两项
+        ...(this.debugEnable && {
+          'timeSyncSettings.freqCorrection': String(this.freqCorrection),
+          'timeSyncSettings.vtcxoWord': String(this.vtcxoWord)
+        })
       };
-      this.lastOperation = { type: 'set', data: data };
+      this.lastOperation = { type: 'set', data };
       WebSocketService.sendSetCommand(data);
       this.isApplyModalVisible = true;
-      setTimeout(() => {
-        this.hideApplyModal();
-      }, 1000);
+      setTimeout(this.hideApplyModal, 1000);
     },
     hideApplyModal() {
       this.isApplyModalVisible = false;
     },
-    // ----------------------- 刷新时钟同步数据 -----------------------
+
+    // 刷新数据
     refreshClockSync() {
       const keys = [
         'timeSyncSettings.clockSource',
         'timeSyncSettings.sfnOffset',
-        'timeSyncSettings.freqCorrection',
-        'timeSyncSettings.vtcxoWord',
+        // 仅在 debugEnable 时请求这两项
+        ...(this.debugEnable
+          ? ['timeSyncSettings.freqCorrection', 'timeSyncSettings.vtcxoWord']
+          : []
+        ),
         'timeSyncSettings.gnssLockStatus',
         'timeSyncSettings.gnssTime',
         'timeSyncSettings.longitude',
-        'timeSyncSettings.latitude'
+        'timeSyncSettings.latitude',
+        'system.debugEnable'
       ];
       this.lastOperation = { type: 'get', data: keys };
       WebSocketService.sendGetCommand(keys);
       this.isRefreshModalVisible = true;
-      setTimeout(() => {
-        this.hideRefreshModal();
-      }, 1000);
+      setTimeout(this.hideRefreshModal, 1000);
     },
     hideRefreshModal() {
       this.isRefreshModalVisible = false;
     },
-    // ----------------------- 错误处理 -----------------------
+
+    // 错误处理
     showError(message, details = '') {
       this.errorInfo = { visible: true, message, details };
     },
@@ -314,34 +305,34 @@ export default {
       this.errorInfo.visible = false;
     },
     retryLastOperation() {
-      if (this.lastOperation.type && this.lastOperation.data) {
-        if (this.lastOperation.type === 'get') {
-          WebSocketService.sendGetCommand(this.lastOperation.data);
-        } else if (this.lastOperation.type === 'set') {
-          WebSocketService.sendSetCommand(this.lastOperation.data);
-        }
+      if (this.lastOperation.type === 'get') {
+        WebSocketService.sendGetCommand(this.lastOperation.data);
+      } else if (this.lastOperation.type === 'set') {
+        WebSocketService.sendSetCommand(this.lastOperation.data);
       }
       this.hideErrorModal();
     }
   },
+
   mounted() {
     this.initWebSocket();
-    // 延时获取初始值，使用带前缀的 key
+    // 首次获取所有参数，包括 debugEnable
     setTimeout(() => {
       const keys = [
         'timeSyncSettings.clockSource',
         'timeSyncSettings.sfnOffset',
-        'timeSyncSettings.freqCorrection',
-        'timeSyncSettings.vtcxoWord',
         'timeSyncSettings.gnssLockStatus',
         'timeSyncSettings.gnssTime',
         'timeSyncSettings.longitude',
-        'timeSyncSettings.latitude'
+        'timeSyncSettings.latitude',
+        'system.debugEnable'
       ];
+      // 如果 debugEnable 为 true，还会在刷新时包含 freqCorrection 与 vtcxoWord
       this.lastOperation = { type: 'get', data: keys };
       WebSocketService.sendGetCommand(keys);
-    }, 1000);
+    }, 500);
   },
+
   beforeUnmount() {
     WebSocketService.offMessage(this.handleWebSocketMessage);
   }
@@ -359,10 +350,10 @@ export default {
 .content {
   width: 100%;
   max-width: 1000px;
-  background-color: #ffffff;
+  background-color: #fff;
   padding: 20px;
   border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 .content-container {
   max-width: 800px;
@@ -372,7 +363,6 @@ h2 {
   text-align: center;
   margin-bottom: 30px;
 }
-/* WebSocket连接状态提示 */
 .connection-status {
   margin-bottom: 15px;
   padding: 8px;
@@ -395,24 +385,20 @@ th, td {
   padding: 10px;
   text-align: left;
 }
-.input-with-unit {
-  display: flex;
-  align-items: center;
+.error {
+  border: 2px solid red;
 }
-.input-with-buttons input {
-  width: 100px;
-  padding: 5px;
-  margin-right: 10px;
-}
-.unit {
-  color: #999;
+.error-msg {
+  color: red;
+  font-size: 12px;
+  margin-top: 5px;
 }
 .button-container {
   margin-bottom: 20px;
 }
 button {
   background-color: #003366;
-  color: white;
+  color: #fff;
   border: none;
   padding: 10px 20px;
   border-radius: 3px;
@@ -422,40 +408,35 @@ button {
 button:hover {
   background-color: #004488;
 }
-/* 弹窗 */
 .modal {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   background-color: #003366;
-  color: white;
+  color: #fff;
   padding: 20px;
   border-radius: 5px;
   text-align: center;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
   z-index: 1000;
 }
 .modal button {
   margin-top: 10px;
-  background-color: white;
+  background-color: #fff;
   color: #003366;
 }
 .modal button:hover {
   background-color: #f0f0f0;
 }
-/* 错误弹窗 */
 .error-modal {
   background-color: #cc3333;
   min-width: 300px;
 }
 .error-details {
   font-size: 0.9em;
-  max-width: 400px;
-  word-break: break-all;
   margin-top: 10px;
   padding: 8px;
-  background-color: rgba(0, 0, 0, 0.1);
+  background: rgba(0,0,0,0.1);
   border-radius: 3px;
 }
 .modal-buttons {
@@ -464,14 +445,4 @@ button:hover {
   gap: 10px;
   margin-top: 15px;
 }
-/* 错误样式 */
-.error {
-  border: 2px solid red;
-}
-.error-msg {
-  color: red;
-  font-size: 12px;
-  margin-top: 5px;
-}
 </style>
-
