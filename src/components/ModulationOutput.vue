@@ -154,8 +154,8 @@
           <button @click="applyPAPR">应用峰均比抑制设置</button>
         </section>
 
-        <!-- ============== 调制输出参数（只读） ============== -->
-        <!-- <h3>调制输出参数</h3>
+        <!-- ============== 调制输出参数 ============== -->
+        <h3>调制输出参数</h3>
         <table>
           <tr>
             <th>项目</th>
@@ -164,7 +164,7 @@
           <tr>
             <td>DRM模式</td>
             <td>
-              <select v-model="currentDRMMode" class="custom-select" disabled>
+              <select v-model="currentDRMMode" class="custom-select no-arrow" disabled>
                 <option v-for="mode in drmModes" :key="mode" :value="mode">{{ mode }}</option>
               </select>
             </td>
@@ -172,7 +172,7 @@
           <tr>
             <td>频谱带宽</td>
             <td>
-              <select v-model="spectrumBandwidth" class="custom-select" disabled>
+              <select v-model="spectrumBandwidth" class="custom-select no-arrow" disabled>
                 <option v-for="bw in bandwidths" :key="bw" :value="bw">{{ bw }}</option>
               </select>
             </td>
@@ -180,7 +180,7 @@
           <tr>
             <td>SDC模式</td>
             <td>
-              <select v-model="sdcMode" class="custom-select" disabled>
+              <select v-model="sdcMode" class="custom-select no-arrow" disabled>
                 <option v-for="m in sdcModes" :key="m" :value="m">{{ m }}</option>
               </select>
             </td>
@@ -188,7 +188,7 @@
           <tr>
             <td>MSC模式</td>
             <td>
-              <select v-model="mscMode" class="custom-select" disabled>
+              <select v-model="mscMode" class="custom-select no-arrow" disabled>
                 <option v-for="m in mscModes" :key="m" :value="m">{{ m }}</option>
               </select>
             </td>
@@ -196,7 +196,7 @@
           <tr>
             <td>MSC保护等级A</td>
             <td>
-              <select v-model="mscProtectionLevelA" class="custom-select" disabled>
+              <select v-model="mscProtectionLevelA" class="custom-select no-arrow" disabled>
                 <option v-for="lvl in protectionLevels" :key="lvl" :value="lvl">{{ lvl }}</option>
               </select>
             </td>
@@ -204,68 +204,12 @@
           <tr>
             <td>MSC保护等级B</td>
             <td>
-              <select v-model="mscProtectionLevelB" class="custom-select" disabled>
+              <select v-model="mscProtectionLevelB" class="custom-select no-arrow" disabled>
                 <option v-for="lvl in protectionLevels" :key="lvl" :value="lvl">{{ lvl }}</option>
               </select>
             </td>
           </tr>
-        </table> -->
-        <h3>调制输出参数</h3>
-<table>
-  <tr>
-    <th>项目</th>
-    <th>值/设置</th>
-  </tr>
-  <tr>
-    <td>DRM模式</td>
-    <td>
-      <select v-model="currentDRMMode" class="custom-select no-arrow" disabled>
-        <option v-for="mode in drmModes" :key="mode" :value="mode">{{ mode }}</option>
-      </select>
-    </td>
-  </tr>
-  <tr>
-    <td>频谱带宽</td>
-    <td>
-      <select v-model="spectrumBandwidth" class="custom-select no-arrow" disabled>
-        <option v-for="bw in bandwidths" :key="bw" :value="bw">{{ bw }}</option>
-      </select>
-    </td>
-  </tr>
-  <tr>
-    <td>SDC模式</td>
-    <td>
-      <select v-model="sdcMode" class="custom-select no-arrow" disabled>
-        <option v-for="m in sdcModes" :key="m" :value="m">{{ m }}</option>
-      </select>
-    </td>
-  </tr>
-  <tr>
-    <td>MSC模式</td>
-    <td>
-      <select v-model="mscMode" class="custom-select no-arrow" disabled>
-        <option v-for="m in mscModes" :key="m" :value="m">{{ m }}</option>
-      </select>
-    </td>
-  </tr>
-  <tr>
-    <td>MSC保护等级A</td>
-    <td>
-      <select v-model="mscProtectionLevelA" class="custom-select no-arrow" disabled>
-        <option v-for="lvl in protectionLevels" :key="lvl" :value="lvl">{{ lvl }}</option>
-      </select>
-    </td>
-  </tr>
-  <tr>
-    <td>MSC保护等级B</td>
-    <td>
-      <select v-model="mscProtectionLevelB" class="custom-select no-arrow" disabled>
-        <option v-for="lvl in protectionLevels" :key="lvl" :value="lvl">{{ lvl }}</option>
-      </select>
-    </td>
-  </tr>
-</table>
-
+        </table>
         <button disabled class="disabled">应用调制输出设置</button>
 
         <!-- ============== DPD及延时操作区域 ============== -->
@@ -313,7 +257,7 @@
               <td>延时参数估计</td>
               <td>
                 <button class="blue-btn" @click="estimateDelay">延时参数估计</button>
-                <button class="green-btn">延时参数设置</button>
+                <button class="green-btn" @click="applyDelay">延时参数设置</button>
                 <button class="orange-btn" @click="tryResetDelay">延时参数复位</button>
               </td>
             </tr>
@@ -368,18 +312,14 @@ export default {
   data() {
     return {
       exciterType: "",
-
       rfOutputEnabled: false,
       rfOutputFreq: 15.120,
       rfOutputPower: -8.4,
       rfPMEnable: false,
       rfAMEnable: false,
-
       rfEnvelopeLevel: -6.0,
       rfEnvelopeDC: 0.0,
-
       peakToAverageSuppressLevel: "7.0",
-
       currentDRMMode: "A",
       drmModes: ["A", "B", "C", "D"],
       spectrumBandwidth: "4.5kHz",
@@ -391,12 +331,10 @@ export default {
       mscProtectionLevelA: "0",
       mscProtectionLevelB: "0",
       protectionLevels: ["0", "1", "2", "3"],
-
       isFrequencyConsistent: false,
       inputFrequency: 0,
       dpdResult: "",
       delayValue: "0.0",
-
       wsConnected: false,
       processingModal: { show: false, message: "" },
       confirmModal: { show: false, message: "", onConfirm: null },
@@ -414,7 +352,6 @@ export default {
     isDX200() { return this.exciterType === "DX200"; },
     isPSM()   { return this.exciterType === "PSM"; },
     isDEBUG(){ return this.exciterType === "DEBUG"; },
-
     showRFSection()       { return this.isDDS || this.isPSM || this.isDEBUG; },
     showEnvelopeSection() { return this.isDDS || this.isPSM || this.isDEBUG; },
     showPAPRSection()     { return this.isNONE || this.isDX200 || this.isDDS || this.isDEBUG; },
@@ -473,9 +410,7 @@ export default {
         else if (sub === "rfEnvelopeLevel") this.rfEnvelopeLevel = parseFloat(value);
         else if (sub === "rfEnvelopeDC") this.rfEnvelopeDC = parseFloat(value);
         else if (sub === "dpdInputFreq") this.dpdResult = value;
-        else if (sub === "delayValue") {
-          this.delayValue = value;
-        }
+        else if (sub === "delayValue") this.delayValue = value;
       } else if (key.startsWith("digitalIqOutput.peakToAverageSuppressLevel")) {
         this.peakToAverageSuppressLevel = parseFloat(value).toFixed(1);
       } else if (key.startsWith("modulation.")) {
@@ -490,11 +425,11 @@ export default {
     },
     applyRFOutput() {
       const data = {
-        "exciter.rfOutputEnable": this.rfOutputEnabled,
+        "exciter.rfOutputEnable": this.rfOutputEnabled.toString(),
         "exciter.rfOutputFreq": this.rfOutputFreq.toFixed(3),
-        "exciter.rfOutputPower": parseFloat(this.rfOutputPower),
-        "exciter.rfPMEnable": this.rfPMEnable,
-        "exciter.rfAMEnable": this.rfAMEnable
+        "exciter.rfOutputPower": this.rfOutputPower.toString(),
+        "exciter.rfPMEnable": this.rfPMEnable.toString(),
+        "exciter.rfAMEnable": this.rfAMEnable.toString()
       };
       this.lastOperation = { type: "set", data };
       WebSocketService.sendSetCommand(data);
@@ -533,9 +468,15 @@ export default {
       this.lastOperation = { type: "get", data: ["exciter.delayValue"] };
       WebSocketService.sendGetCommand(["exciter.delayValue"]);
     },
+    applyDelay() {
+      // 如果有设置延时接口，可在此实现
+    },
     tryResetDelay() {
       this.lastOperation = { type: "set", data: { "exciter.delayReset": true } };
       WebSocketService.sendSetCommand({ "exciter.delayReset": true });
+    },
+    toggleFrequency() {
+      // 如果需要处理频率一致逻辑，在此实现
     },
     cancelProcessing() {
       this.processingModal.show = false;
@@ -592,6 +533,9 @@ export default {
       this.lastOperation = { type: "get", data: keys };
       WebSocketService.sendGetCommand(keys);
     }, 1000);
+  },
+  beforeUnmount() {
+    WebSocketService.offMessage(this.handleWebSocketMessage);
   }
 };
 </script>
@@ -700,15 +644,24 @@ button.disabled {
   margin-right: 5px;
   padding: 8px 12px !important;
 }
+.blue-btn:hover {
+  background-color: #40a9ff;
+}
 .orange-btn {
   background-color: #f5a623;
   margin-right: 5px;
   padding: 8px 12px !important;
 }
+.orange-btn:hover {
+  background-color: #ffbb33;
+}
 .green-btn {
   background-color: #90ee90;
   margin-right: 5px;
   padding: 8px 12px !important;
+}
+.green-btn:hover {
+  background-color: #a2fca2;
 }
 
 .modal {
@@ -789,6 +742,6 @@ input:checked + .slider:before {
   appearance: none;
   background-color: transparent;
   background-image: none;
-  padding-right: 0; /* 去掉右侧的留白 */
+  padding-right: 0;
 }
 </style>
