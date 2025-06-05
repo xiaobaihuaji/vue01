@@ -23,8 +23,8 @@
         <ClockSync                  v-else-if="currentPage === 'ClockSync'" />
         <ModulationOutput           v-else-if="currentPage === 'ModulationOutput'" />
         <BasebandRecording          v-else-if="currentPage === 'BasebandRecording'" />
-        <PAPR                       v-else-if="currentPage === 'PAPR'" />
-        <RFOutput                   v-else-if="currentPage === 'RFOutput'" />
+        <!-- <PAPR                       v-else-if="currentPage === 'PAPR'" /> -->
+        <!-- <RFOutput                   v-else-if="currentPage === 'RFOutput'" /> -->
         <EnvelopeOutput             v-else-if="currentPage === 'EnvelopeOutput'" />
       </div>
     </div>
@@ -41,8 +41,8 @@ import MultiplexingInput from './components/MultiplexingInput.vue'
 import ClockSync from './components/ClockSync.vue'
 import ModulationOutput from './components/ModulationOutput.vue'
 import BasebandRecording from './components/BasebandRecording.vue'
-import PAPR from './components/PAPR.vue'
-import RFOutput from './components/RFOutput.vue'
+//import PAPR from './components/PAPR.vue'
+//import RFOutput from './components/RFOutput.vue'
 import EnvelopeOutput from './components/EnvelopeOutput.vue'
 import Login from './components/Login.vue'  // ← 新增
 
@@ -58,8 +58,8 @@ export default {
     ClockSync,
     ModulationOutput,
     BasebandRecording,
-    PAPR,
-    RFOutput,
+    //PAPR,
+    //RFOutput,
     EnvelopeOutput,
     Login                            // ← 新增
   },

@@ -55,7 +55,8 @@
         </table>
 
         <!-- 以太网2设置 -->
-        <!-- <h2>以太网2设置</h2>
+        <!-- 
+        <h2>以太网2设置</h2>
         <table>
           <tr>
             <th>项目</th>
@@ -99,7 +100,8 @@
               <input type="text" v-model="macAddress2" disabled>
             </td>
           </tr>
-        </table> -->
+        </table>
+        -->
 
         <!-- 应用按钮 -->
         <div class="button-container">
@@ -114,10 +116,12 @@
         </div>
 
         <!-- 刷新成功弹窗提示 -->
-        <!-- <div v-if="isRefreshModalVisible" class="modal">
+        <!-- 
+        <div v-if="isRefreshModalVisible" class="modal">
           <p>刷新成功！</p>
           <button @click="hideRefreshModal">关闭</button>
-        </div> -->
+        </div>
+        -->
 
         <!-- 错误提示弹窗 -->
         <div v-if="errorInfo.visible" class="modal error-modal">
@@ -152,7 +156,7 @@ export default {
       mdiInputPort1: '',
       macAddress1: '00:00:00:00:00:00',
 
-      // 以太网2设置
+      // 以太网2设置（注释掉）
       ethernetIP2: '',
       subnetMask2: '',
       gatewayAddress2: '',
@@ -248,24 +252,25 @@ export default {
         case 'EthernetSettings1.macAddress1':
           this.macAddress1 = value;
           break;
-        case 'EthernetSettings2.ethernetIP2':
-          this.ethernetIP2 = value;
-          break;
-        case 'EthernetSettings2.subnetMask2':
-          this.subnetMask2 = value;
-          break;
-        case 'EthernetSettings2.gatewayAddress2':
-          this.gatewayAddress2 = value;
-          break;
-        case 'EthernetSettings2.multicastIPGroup2':
-          this.multicastIPGroup2 = value;
-          break;
-        case 'EthernetSettings2.mdiInputPort2':
-          this.mdiInputPort2 = value;
-          break;
-        case 'EthernetSettings2.macAddress2':
-          this.macAddress2 = value;
-          break;
+        // 以下部分注释掉，不再更新网卡2
+        // case 'EthernetSettings2.ethernetIP2':
+        //   this.ethernetIP2 = value;
+        //   break;
+        // case 'EthernetSettings2.subnetMask2':
+        //   this.subnetMask2 = value;
+        //   break;
+        // case 'EthernetSettings2.gatewayAddress2':
+        //   this.gatewayAddress2 = value;
+        //   break;
+        // case 'EthernetSettings2.multicastIPGroup2':
+        //   this.multicastIPGroup2 = value;
+        //   break;
+        // case 'EthernetSettings2.mdiInputPort2':
+        //   this.mdiInputPort2 = value;
+        //   break;
+        // case 'EthernetSettings2.macAddress2':
+        //   this.macAddress2 = value;
+        //   break;
         // 如果返回的数据不带前缀，也支持更新
         case 'ethernetIP1':
           this.ethernetIP1 = value;
@@ -285,24 +290,25 @@ export default {
         case 'macAddress1':
           this.macAddress1 = value;
           break;
-        case 'ethernetIP2':
-          this.ethernetIP2 = value;
-          break;
-        case 'subnetMask2':
-          this.subnetMask2 = value;
-          break;
-        case 'gatewayAddress2':
-          this.gatewayAddress2 = value;
-          break;
-        case 'multicastIPGroup2':
-          this.multicastIPGroup2 = value;
-          break;
-        case 'mdiInputPort2':
-          this.mdiInputPort2 = value;
-          break;
-        case 'macAddress2':
-          this.macAddress2 = value;
-          break;
+        // 以下部分注释掉，不再更新网卡2
+        // case 'ethernetIP2':
+        //   this.ethernetIP2 = value;
+        //   break;
+        // case 'subnetMask2':
+        //   this.subnetMask2 = value;
+        //   break;
+        // case 'gatewayAddress2':
+        //   this.gatewayAddress2 = value;
+        //   break;
+        // case 'multicastIPGroup2':
+        //   this.multicastIPGroup2 = value;
+        //   break;
+        // case 'mdiInputPort2':
+        //   this.mdiInputPort2 = value;
+        //   break;
+        // case 'macAddress2':
+        //   this.macAddress2 = value;
+        //   break;
         default:
           console.log(`未处理的参数: ${key} = ${value}`);
       }
@@ -319,14 +325,16 @@ export default {
         'EthernetSettings1.multicastIPGroup1': this.multicastIPGroup1,
         'EthernetSettings1.mdiInputPort1': this.mdiInputPort1
       };
-      const ethernet2Settings = {
-        'EthernetSettings2.ethernetIP2': this.ethernetIP2,
-        'EthernetSettings2.subnetMask2': this.subnetMask2,
-        'EthernetSettings2.gatewayAddress2': this.gatewayAddress2,
-        'EthernetSettings2.multicastIPGroup2': this.multicastIPGroup2,
-        'EthernetSettings2.mdiInputPort2': this.mdiInputPort2
-      };
-      const allSettings = { ...ethernet1Settings, ...ethernet2Settings };
+      // 注释掉网卡2的设置，不再发送
+      // const ethernet2Settings = {
+      //   'EthernetSettings2.ethernetIP2': this.ethernetIP2,
+      //   'EthernetSettings2.subnetMask2': this.subnetMask2,
+      //   'EthernetSettings2.gatewayAddress2': this.gatewayAddress2,
+      //   'EthernetSettings2.multicastIPGroup2': this.multicastIPGroup2,
+      //   'EthernetSettings2.mdiInputPort2': this.mdiInputPort2
+      // };
+      // const allSettings = { ...ethernet1Settings, ...ethernet2Settings };
+      const allSettings = { ...ethernet1Settings };
       this.lastOperation = { type: 'set', data: allSettings };
       if (WebSocketService.sendSetCommand(allSettings)) {
         this.showApplySuccess();
@@ -341,50 +349,62 @@ export default {
         this.showError('以太网1 IP地址格式不正确');
         return false;
       }
-      if (!ipRegex.test(this.ethernetIP2)) {
-        this.showError('以太网2 IP地址格式不正确');
-        return false;
-      }
+      // 注释掉网卡2的校验
+      // if (!ipRegex.test(this.ethernetIP2)) {
+      //   this.showError('以太网2 IP地址格式不正确');
+      //   return false;
+      // }
       if (!ipRegex.test(this.subnetMask1)) {
         this.showError('以太网1 子网掩码格式不正确');
         return false;
       }
-      if (!ipRegex.test(this.subnetMask2)) {
-        this.showError('以太网2 子网掩码格式不正确');
-        return false;
-      }
+      // if (!ipRegex.test(this.subnetMask2)) {
+      //   this.showError('以太网2 子网掩码格式不正确');
+      //   return false;
+      // }
       if (!ipRegex.test(this.gatewayAddress1)) {
         this.showError('以太网1 网关地址格式不正确');
         return false;
       }
-      if (!ipRegex.test(this.gatewayAddress2)) {
-        this.showError('以太网2 网关地址格式不正确');
-        return false;
-      }
+      // if (!ipRegex.test(this.gatewayAddress2)) {
+      //   this.showError('以太网2 网关地址格式不正确');
+      //   return false;
+      // }
       const multicastRegex = /^(22[4-9]|23[0-9])\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)$/;
       if (!multicastRegex.test(this.multicastIPGroup1)) {
         this.showError('以太网1 组播IP格式不正确或不在有效范围内');
         return false;
       }
-      if (!multicastRegex.test(this.multicastIPGroup2)) {
-        this.showError('以太网2 组播IP格式不正确或不在有效范围内');
-        return false;
-      }
+      // if (!multicastRegex.test(this.multicastIPGroup2)) {
+      //   this.showError('以太网2 组播IP格式不正确或不在有效范围内');
+      //   return false;
+      // }
       if (this.mdiInputPort1 < 0 || this.mdiInputPort1 > 65535) {
         this.showError('以太网1 MDI输入端口必须在0-65535范围内');
         return false;
       }
-      if (this.mdiInputPort2 < 0 || this.mdiInputPort2 > 65535) {
-        this.showError('以太网2 MDI输入端口必须在0-65535范围内');
-        return false;
-      }
+      // if (this.mdiInputPort2 < 0 || this.mdiInputPort2 > 65535) {
+      //   this.showError('以太网2 MDI输入端口必须在0-65535范围内');
+      //   return false;
+      // }
       return true;
     },
     // 刷新设置
     refreshSettings() {
       const keys = [
-        'EthernetSettings1.ethernetIP1', 'EthernetSettings1.subnetMask1', 'EthernetSettings1.gatewayAddress1', 'EthernetSettings1.multicastIPGroup1', 'EthernetSettings1.mdiInputPort1', 'EthernetSettings1.macAddress1',
-        'EthernetSettings2.ethernetIP2', 'EthernetSettings2.subnetMask2', 'EthernetSettings2.gatewayAddress2', 'EthernetSettings2.multicastIPGroup2', 'EthernetSettings2.mdiInputPort2', 'EthernetSettings2.macAddress2'
+        'EthernetSettings1.ethernetIP1',
+        'EthernetSettings1.subnetMask1',
+        'EthernetSettings1.gatewayAddress1',
+        'EthernetSettings1.multicastIPGroup1',
+        'EthernetSettings1.mdiInputPort1',
+        'EthernetSettings1.macAddress1',
+        // 注释掉网卡2的刷新
+        // 'EthernetSettings2.ethernetIP2',
+        // 'EthernetSettings2.subnetMask2',
+        // 'EthernetSettings2.gatewayAddress2',
+        // 'EthernetSettings2.multicastIPGroup2',
+        // 'EthernetSettings2.mdiInputPort2',
+        // 'EthernetSettings2.macAddress2'
       ];
       this.lastOperation = { type: 'get', data: keys };
       if (WebSocketService.sendGetCommand(keys)) {

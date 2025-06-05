@@ -19,7 +19,6 @@
             <td>
               <select v-model="inputInterfaceSetting">
                 <option value="ETH1">ETH1</option>
-                <option value="ETH2">ETH2</option>
               </select>
             </td>
           </tr>
@@ -59,12 +58,6 @@
           <button @click="refreshStatus">刷新状态</button>
         </div>
 
-        <!-- 弹窗提示 -->
-        <!-- <div v-if="isModalVisible" class="modal">
-          <p>{{ modalMessage }}</p>
-          <button @click="hideModal">关闭</button>
-        </div> -->
-
         <!-- 错误提示弹窗 -->
         <div v-if="errorInfo.visible" class="modal error-modal">
           <h3>错误</h3>
@@ -75,7 +68,6 @@
             <button @click="retryLastOperation">重试</button>
           </div>
         </div>
-
       </div>
     </div>
   </div>
@@ -99,9 +91,6 @@ export default {
       nullFrameCounter: 0,
       iqFrameCounter: 0,
 
-      isModalVisible: false,
-      modalMessage: '',
-
       errorInfo: {
         visible: false,
         message: '',
@@ -111,7 +100,8 @@ export default {
       lastOperation: {
         type: '',
         data: null
-      }
+      },
+      refreshTimer: null
     }
   },
   methods: {
@@ -139,7 +129,7 @@ export default {
         });
       }
     },
-    // 更新传回的数据时，若带有 "mdiInputSettings." 前缀，则去除再更新对应变量
+    // 更新传回的数据，去掉前缀后更新对应变量
     updateValue(key, value) {
       if (key.startsWith('mdiInputSettings.')) {
         key = key.slice('mdiInputSettings.'.length);
@@ -166,13 +156,11 @@ export default {
         case 'iqFrameCounter':
           this.iqFrameCounter = value;
           break;
-        // 其它字段保留原值，如 inputInterfaceSetting 可能通过设置改变
         default:
           console.log(`未处理的字段: ${key}`);
       }
     },
-    refreshStatus() {
-      // 请求时使用带前缀的key
+    refreshStatus(showPopup = true) {
       const keys = [
         'mdiInputSettings.currentInputPort',
         'mdiInputSettings.sourceIP',
@@ -184,21 +172,15 @@ export default {
       ];
       this.lastOperation = { type: 'get', data: keys };
       WebSocketService.sendGetCommand(keys);
-      this.showSuccess('刷新成功！');
+      // 仅手动刷新时弹窗
+      if (showPopup) {
+        // 可以根据需求在此显示成功提示
+      }
     },
     applySettings() {
-      // 此处仅应用输入接口设置（如有其它设置可扩展）
       const data = { inputInterfaceSetting: this.inputInterfaceSetting };
       this.lastOperation = { type: 'set', data };
       WebSocketService.sendSetCommand(data);
-      this.showSuccess('应用成功！');
-    },
-    showSuccess(message) {
-      this.modalMessage = message;
-      this.isModalVisible = true;
-    },
-    hideModal() {
-      this.isModalVisible = false;
     },
     showError(message, details = '') {
       this.errorInfo = { visible: true, message, details };
@@ -217,12 +199,20 @@ export default {
   },
   mounted() {
     this.initWebSocket();
+    // 1 秒定时刷新六项数据，不弹提示
+    this.refreshTimer = setInterval(() => {
+      this.refreshStatus(false);
+    }, 1000);
+    // 初次延迟请求
     setTimeout(() => {
-      this.refreshStatus();
+      this.refreshStatus(false);
     }, 1000);
   },
   beforeUnmount() {
     WebSocketService.offMessage(this.handleWebSocketMessage);
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
+    }
   }
 };
 </script>
@@ -262,10 +252,13 @@ table {
   border-collapse: collapse;
   margin-bottom: 20px;
 }
-table, th, td {
+table,
+th,
+td {
   border: 1px solid #ddd;
 }
-th, td {
+th,
+td {
   padding: 10px;
   text-align: left;
 }

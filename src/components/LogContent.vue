@@ -18,7 +18,7 @@
               <th>分类</th>
               <th>时间</th>
               <th>描述</th>
-              <th>操作</th>
+              <!-- <th>操作</th> -->
             </tr>
           </thead>
           <tbody>
@@ -27,9 +27,9 @@
               <td>{{ log.category }}</td>
               <td>{{ log.time }}</td>
               <td>{{ log.description }}</td>
-              <td>
+              <!-- <td>
                 <button @click="deleteLog(index)">删除</button>
-              </td>
+              </td> -->
             </tr>
           </tbody>
         </table>

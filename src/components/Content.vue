@@ -299,3 +299,4 @@ button:hover { background:#004488 }
 .error-details { font-size:.9em; margin-top:10px; padding:8px; background:rgba(0,0,0,.1); border-radius:3px }
 .modal-buttons { display:flex; justify-content:center; gap:10px; margin-top:15px }
 </style>
+
