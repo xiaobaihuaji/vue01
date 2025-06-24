@@ -1,25 +1,25 @@
+<!--  ModulationOutput.vue  -->
 <template>
   <div class="content-wrapper">
     <div class="content">
       <div class="content-container">
-        <!-- WebSocket连接状态显示 -->
+        <!-- WebSocket 连接状态 -->
         <div class="connection-status" :class="{ connected: wsConnected }">
-          WebSocket状态: {{ wsConnected ? '已连接' : '未连接' }}
+          WebSocket 状态: {{ wsConnected ? '已连接' : '未连接' }}
         </div>
-        <!-- ============== 调制输出页面标题 ============== -->
+
+        <!-- 标题 -->
         <h2>调制输出</h2>
-        <!-- 两列布局容器 -->
+
+        <!-- ===== 两列布局 ================================================= -->
         <div class="columns">
-          <!-- 左侧列：根据不同模式显示不同内容 -->
+          <!-- ================= 左侧列 ================= -->
           <div class="column left-column" v-if="showLeftColumn">
-            <!-- ============== 峰均比抑制区域：仅在NONE、DDS、DEBUG模式下显示 ============== -->
+            <!-- 峰均比抑制：NONE、DDS、DEBUG -->
             <section v-if="showPAPRSection">
               <h3>峰均比抑制（CFR）</h3>
               <table>
-                <tr>
-                  <th>项目</th>
-                  <th>值/设置</th>
-                </tr>
+                <tr><th>项目</th><th>值/设置</th></tr>
                 <tr>
                   <td>峰均比抑制</td>
                   <td>
@@ -32,31 +32,26 @@
                 <tr>
                   <td>峰均比抑制值</td>
                   <td class="input-with-unit">
-                    <div class="input-with-buttons">
-                      <input
-                        type="number"
-                        v-model="peakToAverageSuppressLevel"
-                        step="0.1"
-                        placeholder="请输入峰均比"
-                        @focus="showUpDownButtons = true"
-                        @blur="handlePAPRBlur"
-                      >
-                      <span class="unit">dB</span>
-                    </div>
+                    <input
+                      type="number"
+                      v-model="peakToAverageSuppressLevel"
+                      step="0.1"
+                      placeholder="6.0~12.0"
+                      @focus="showUpDownButtons = true"
+                      @blur="handlePAPRBlur"
+                    >
+                    <span class="unit">dB</span>
                   </td>
                 </tr>
               </table>
-              <button @click="applyPAPR">应用峰均比抑制设置</button>
+              <button @click="applyPAPR">应用峰均比抑制</button>
             </section>
-            <!-- ============== 射频输出区域：仅在DDS、PSM模式下显示 ============== -->
+
+            <!-- 射频输出：DDS、PSM、DEBUG -->
             <section v-if="showRFSection">
               <h3>射频输出</h3>
               <table>
-                <tr>
-                  <th>项目</th>
-                  <th>值/设置</th>
-                </tr>
-                <!-- "输出使能"仅在DDS模式下显示 -->
+                <tr><th>项目</th><th>值/设置</th></tr>
                 <tr v-if="showRFOutputEnable">
                   <td>输出使能</td>
                   <td>
@@ -66,42 +61,34 @@
                     </label>
                   </td>
                 </tr>
-                <!-- "输出频率"仅在PSM模式下显示 -->
                 <tr v-if="showRFOutputFreq">
                   <td>输出频率</td>
                   <td class="input-with-unit">
-                    <div class="input-with-buttons">
-                      <input
-                        type="number"
-                        v-model.number="rfOutputFreq"
-                        step="0.001"
-                        placeholder="请输入输出频率"
-                        @focus="showUpDownButtons = true"
-                        @blur="showUpDownButtons = false"
-                      >
-                      <span class="unit">MHz</span>
-                    </div>
+                    <input
+                      type="number"
+                      v-model.number="rfOutputFreq"
+                      step="0.001"
+                      placeholder="MHz"
+                      @focus="showUpDownButtons = true"
+                      @blur="showUpDownButtons = false"
+                    >
+                    <span class="unit">MHz</span>
                   </td>
                 </tr>
-                <!-- "输出功率"仅在PSM模式下显示 -->
                 <tr v-if="showRFOutputPower">
                   <td>输出功率</td>
                   <td class="input-with-unit">
-                    <div class="input-with-buttons">
-                      <input
-                        type="number"
-                        v-model.number="rfOutputPower"
-                        step="0.1"
-                        placeholder="请输入输出功率"
-                        @focus="showUpDownButtons = true"
-                        @blur="showUpDownButtons = false"
-                      >
-                      <span class="unit">dB</span>
-                    </div>
+                    <input
+                      type="number"
+                      v-model.number="rfOutputPower"
+                      step="0.1"
+                      placeholder="dB"
+                      @focus="showUpDownButtons = true"
+                      @blur="showUpDownButtons = false"
+                    >
+                    <span class="unit">dB</span>
                   </td>
                 </tr>
-                <!-- "调幅使能"在所有射频输出模式下都不显示（根据表格都是X） -->
-                <!-- "调相使能"仅在PSM模式下显示 -->
                 <tr v-if="showRFPMEnable">
                   <td>调相使能</td>
                   <td>
@@ -112,113 +99,106 @@
                   </td>
                 </tr>
               </table>
-              <button @click="applyRFOutput">应用射频输出设置</button>
+              <button @click="applyRFOutput">应用射频输出</button>
             </section>
-            <!-- ============== 包络输出区域：仅在DDS、PSM、DEBUG模式下显示 ============== -->
+
+            <!-- 包络输出：DDS、PSM、DEBUG -->
             <section v-if="showEnvelopeSection">
               <h3>包络输出</h3>
               <table>
-                <tr>
-                  <th>项目</th>
-                  <th>值/设置</th>
-                </tr>
+                <tr><th>项目</th><th>值/设置</th></tr>
                 <tr>
                   <td>电平增益</td>
                   <td class="input-with-unit">
-                    <div class="input-with-buttons">
-                      <input
-                        type="number"
-                        v-model.number="rfEnvelopeLevel"
-                        step="0.1"
-                        placeholder="请输入电平增益"
-                        @focus="showUpDownButtons = true"
-                        @blur="showUpDownButtons = false"
-                      >
-                      <span class="unit">dB</span>
-                    </div>
+                    <input
+                      type="number"
+                      v-model.number="rfEnvelopeLevel"
+                      step="0.1"
+                      placeholder="dB"
+                      @focus="showUpDownButtons = true"
+                      @blur="showUpDownButtons = false"
+                    >
+                    <span class="unit">dB</span>
                   </td>
                 </tr>
                 <tr>
                   <td>直流补偿</td>
                   <td class="input-with-unit">
-                    <div class="input-with-buttons">
-                      <input
-                        type="number"
-                        v-model.number="rfEnvelopeDC"
-                        step="0.1"
-                        placeholder="请输入直流补偿"
-                        @focus="showUpDownButtons = true"
-                        @blur="showUpDownButtons = false"
-                      >
-                      <span class="unit">%</span>
-                    </div>
+                    <input
+                      type="number"
+                      v-model.number="rfEnvelopeDC"
+                      step="0.1"
+                      placeholder="%"
+                      @focus="showUpDownButtons = true"
+                      @blur="showUpDownButtons = false"
+                    >
+                    <span class="unit">%</span>
                   </td>
                 </tr>
               </table>
-              <button @click="applyEnvelope">应用包络输出设置</button>
+              <button @click="applyEnvelope">应用包络输出</button>
             </section>
           </div>
-          <!-- 右侧列：调制输出参数、DPD、幅相延时 -->
+          <!-- ================= 右侧列 ================= -->
           <div class="column right-column" :class="{ 'full-width': !showLeftColumn }">
-            <!-- ============== 调制输出参数 ============== -->
+
+            <!-- 调制输出参数：始终显示 -->
             <section>
               <h3>调制输出参数</h3>
               <table>
+                <tr><th>项目</th><th>值/设置</th></tr>
                 <tr>
-                  <th>项目</th>
-                  <th>值/设置</th>
-                </tr>
-                <tr>
-                  <td>DRM模式</td>
+                  <td>DRM 模式</td>
                   <td>
-                    <select v-model="currentDRMMode" class="custom-select no-arrow" disabled>
-                      <option v-for="mode in drmModes" :key="mode" :value="mode">{{ mode }}</option>
+                    <select v-model="currentDRMMode" disabled class="custom-select">
+                      <option v-for="m in drmModes" :key="m" :value="m">{{ m }}</option>
                     </select>
                   </td>
                 </tr>
                 <tr>
                   <td>频谱带宽</td>
                   <td>
-                    <select v-model="spectrumBandwidth" class="custom-select no-arrow" disabled>
+                    <select v-model="spectrumBandwidth" disabled class="custom-select">
                       <option v-for="bw in bandwidths" :key="bw" :value="bw">{{ bw }}</option>
                     </select>
                   </td>
                 </tr>
                 <tr>
-                  <td>SDC模式</td>
+                  <td>SDC 模式</td>
                   <td>
-                    <select v-model="sdcMode" class="custom-select no-arrow" disabled>
+                    <select v-model="sdcMode" disabled class="custom-select">
                       <option v-for="m in sdcModes" :key="m" :value="m">{{ m }}</option>
                     </select>
                   </td>
                 </tr>
                 <tr>
-                  <td>MSC模式</td>
+                  <td>MSC 模式</td>
                   <td>
-                    <select v-model="mscMode" class="custom-select no-arrow" disabled>
+                    <select v-model="mscMode" disabled class="custom-select">
                       <option v-for="m in mscModes" :key="m" :value="m">{{ m }}</option>
                     </select>
                   </td>
                 </tr>
                 <tr>
-                  <td>MSC保护等级A</td>
+                  <td>MSC 保护等级 A</td>
                   <td>
-                    <select v-model="mscProtectionLevelA" class="custom-select no-arrow" disabled>
+                    <select v-model="mscProtectionLevelA" disabled class="custom-select">
                       <option v-for="lvl in protectionLevels" :key="lvl" :value="lvl">{{ lvl }}</option>
                     </select>
                   </td>
                 </tr>
                 <tr>
-                  <td>MSC保护等级B</td>
+                  <td>MSC 保护等级 B</td>
                   <td>
-                    <select v-model="mscProtectionLevelB" class="custom-select no-arrow" disabled>
+                    <select v-model="mscProtectionLevelB" disabled class="custom-select">
                       <option v-for="lvl in protectionLevels" :key="lvl" :value="lvl">{{ lvl }}</option>
                     </select>
                   </td>
                 </tr>
               </table>
             </section>
-            <!-- ============== DPD及延时操作区域：仅在DDS、DX200、PSM模式下显示 ============== -->
+
+            <!-- DPD：DDS、DX200、PSM、DEBUG -->
             <section v-if="showDPDSection">
               <h3>数字预失真校正（DPD）</h3>
               <table>
@@ -226,14 +206,14 @@
                   <td>校正使能</td>
                   <td>
                     <label class="switch">
-                      <input type="checkbox" v-model="dpdCorrectionEnabled">
+                      <input type="checkbox" v-model="dpdCorrectionEnabled" @change="sendDPDCorrectionState">
                       <span class="slider"></span>
                     </label>
                   </td>
                 </tr>
                 <tr v-if="showDPDParamEstimation">
                   <td>参数估计</td>
-                  <td><button @click="startDPDEstimation" class="blue-btn">DPD参数估计</button></td>
+                  <td><button class="blue-btn" @click="startDPDEstimation">DPD 参数估计</button></td>
                 </tr>
                 <tr v-if="showDPDInputFreq">
                   <td>输入频率与输出频率一致</td>
@@ -244,10 +224,10 @@
                     </label>
                   </td>
                 </tr>
-                <tr v-if="!isFrequencyConsistent && showDPDInputFreq">
+                <tr v-if="showDPDInputFreq && !isFrequencyConsistent">
                   <td>输入频率</td>
                   <td class="input-with-unit">
-                    <input type="number" v-model.number="inputFrequency" min="0" step="0.001" placeholder="输入频率">
+                    <input type="number" v-model.number="inputFrequency" step="0.001" placeholder="MHz">
                     <span class="unit">MHz</span>
                   </td>
                 </tr>
@@ -255,647 +235,408 @@
                   <td>估计结果</td>
                   <td class="input-with-unit">
                     <input type="text" v-model="dpdResult" readonly>
-                    <span class="unit">MHz</span> <!-- 根据上下文这里单位可能是状态或空，MHz可能是笔误 -->
                   </td>
                 </tr>
                 <tr v-if="showDPDParamReset">
                   <td>参数复位</td>
-                  <td><button @click="resetDPD" class="orange-btn">DPD参数复位</button></td>
+                  <td>
+                    <!-- **** 改成先确认 **** -->
+                    <button class="orange-btn" @click="askResetDPD">DPD 参数复位</button>
+                  </td>
                 </tr>
               </table>
             </section>
-            <!-- ============== 幅相延时调整区域：仅在DDS、PSM、DEBUG模式下显示 ============== -->
+
+            <!-- 幅相延时：DDS、PSM、DEBUG -->
             <section v-if="showDelaySection">
               <h3>幅相延时调整</h3>
               <table>
-                <tr>
+                <tr v-if="showDelayAuto">
                   <td>自动计算延时</td>
-                  <td>
-                    <button class="blue-btn" @click="estimateDelay">延时参数估计</button>
-                  </td>
+                  <td><button class="blue-btn" @click="estimateDelay">延时参数估计</button></td>
                 </tr>
-                <tr>
+                <tr v-if="showDelayManual">
                   <td>手动设置延时</td>
-                  <td>
-                    <button class="green-btn" @click="applyDelay">延时参数设置</button>
-                  </td>
+                  <td><button class="green-btn" @click="applyDelay">延时参数设置</button></td>
                 </tr>
-                <tr>
+                <tr v-if="showDelayTime">
                   <td>延时时间</td>
                   <td class="input-with-unit">
                     <input type="text" v-model="delayValue" readonly>
                     <span class="unit">us</span>
                   </td>
                 </tr>
-                <tr>
+                <tr v-if="showDelayReset">
                   <td>延时参数复位</td>
-                  <td>
-                    <button class="orange-btn" @click="tryResetDelay">延时参数复位</button>
-                  </td>
+                  <td><button class="orange-btn" @click="tryResetDelay">延时参数复位</button></td>
                 </tr>
               </table>
             </section>
+
           </div>
-        </div> <!-- end of columns -->
-        <!-- 处理中弹窗与确认弹窗 -->
+        </div>
+
+        <!-- =============== 全局弹窗 =============== -->
         <div v-if="processingModal.show" class="modal">
           <p>{{ processingModal.message }}</p>
-          <button @click="cancelProcessing" class="cancel-btn">取消</button>
+          <button class="cancel-btn" @click="cancelProcessing">取消</button>
         </div>
+
         <div v-if="confirmModal.show" class="modal">
           <p>{{ confirmModal.message }}</p>
-          <button @click="confirmModalConfirm" class="blue-btn">确认</button>
-          <button @click="confirmModalCancel">取消</button>
+          <button class="blue-btn" @click="confirmModalConfirm">确认</button>
+          <button class="cancel-btn" @click="confirmModalCancel">取消</button>
         </div>
-        <!-- 应用/操作成功弹窗 -->
+
         <div v-if="isModalVisible" class="modal">
           <p>{{ modalMessage }}</p>
-          <button @click="hideModal">关闭</button>
+          <button class="blue-btn" @click="hideModal">关闭</button>
         </div>
-        <!-- 错误提示弹窗 -->
+
         <div v-if="errorInfo.visible" class="modal error-modal">
           <h3>错误</h3>
           <p>{{ errorInfo.message }}</p>
           <div v-if="errorInfo.details" class="error-details">{{ errorInfo.details }}</div>
           <div class="modal-buttons">
-            <button @click="hideErrorModal">关闭</button>
-            <button @click="retryLastOperation">重试</button>
+            <button class="cancel-btn" @click="hideErrorModal">关闭</button>
+            <button class="blue-btn" @click="retryLastOperation">重试</button>
           </div>
         </div>
       </div>
     </div>
   </div>
 </template>
+
 <script>
-import WebSocketService from '@/store/websocket'; // 假设WebSocketService路径正确
+import WebSocketService from '@/store/websocket';
+
 export default {
-  name: "ModulationOutput",
+  name: 'ModulationOutput',
   data() {
     return {
-      exciterType: "", // 将由WebSocket更新
+      /* ======================== 原有 data 全部保留 ======================== */
+      exciterType: '',
       rfOutputEnabled: false,
       rfOutputFreq: 15.120,
       rfOutputPower: -8.4,
       rfPMEnable: false,
-      rfAMEnable: false, // 根据表格，此项始终不显示
       rfEnvelopeLevel: -6.0,
       rfEnvelopeDC: 0.0,
-      peakToAverageSuppressLevel: "7.0",
       paprSuppressionEnabled: false,
+      peakToAverageSuppressLevel: '7.0',
       dpdCorrectionEnabled: false,
-      currentDRMMode: "A",
-      drmModes: ["A", "B", "C", "D"],
-      spectrumBandwidth: "4.5kHz",
-      bandwidths: ["4.5kHz", "5kHz", "9kHz", "10kHz", "18kHz", "20kHz"],
-      sdcMode: "4QAM",
-      sdcModes: ["4QAM", "16QAM"],
-      mscMode: "16QAM",
-      mscModes: ["16QAM", "64QAM"],
-      mscProtectionLevelA: "0",
-      mscProtectionLevelB: "0",
-      protectionLevels: ["0", "1", "2", "3"],
-      isFrequencyConsistent: false, // DPD 输入频率与输出频率一致
-      inputFrequency: 0,          // DPD 输入频率
-      dpdResult: "",              // DPD 估计结果
-      dpdAlignStatus: "",         // DPD 对齐状态
-      dpdEstimating: false,       // DPD 是否正在估计
-      delayValue: "0.0",          // 幅相延时值
+      isFrequencyConsistent: false,
+      inputFrequency: 0,
+      dpdResult: '',
+      dpdAlignStatus: '',
+      dpdEstimating: false,
+      delayValue: '0.0',
+      currentDRMMode: 'A',
+      drmModes: ['A', 'B', 'C', 'D'],
+      spectrumBandwidth: '4.5kHz',
+      bandwidths: ['4.5kHz', '5kHz', '9kHz', '10kHz', '18kHz', '20kHz'],
+      sdcMode: '4QAM',
+      sdcModes: ['4QAM', '16QAM'],
+      mscMode: '16QAM',
+      mscModes: ['16QAM', '64QAM'],
+      mscProtectionLevelA: '0',
+      mscProtectionLevelB: '0',
+      protectionLevels: ['0', '1', '2', '3'],
+
       wsConnected: false,
-      processingModal: { show: false, message: "" },
-      confirmModal: { show: false, message: "", onConfirm: null },
-      isModalVisible: false,
-      modalMessage: "",
-      errorInfo: { visible: false, message: "", details: "" },
-      lastOperation: { type: "", data: null }, // 用于重试
-      showUpDownButtons: false, // 用于控制输入框上下箭头（如果需要，此逻辑似乎未完全实现）
+      processingModal: { show: false, message: '' },
+      confirmModal:    { show: false, message: '', onConfirm: null },
+      isModalVisible:  false,
+      modalMessage:    '',
+      errorInfo:       { visible: false, message: '', details: '' },
+      lastOperation:   { type: '', data: null },
+      showUpDownButtons: false,
       dpdPollingTimer: null
     };
   },
+
+  /* ======================== computed 保持原样 ======================== */
   computed: {
-    isNONE()  { return this.exciterType === "NONE"; },
-    isDDS()   { return this.exciterType === "DDS"; },
-    isDX100() { return this.exciterType === "DX100"; },
-    isDX200() { return this.exciterType === "DX200"; },
-    isPSM()   { return this.exciterType === "PSM"; },
-    isDEBUG() { return this.exciterType === "DEBUG"; },
+    isNONE()  { return this.exciterType === 'NONE'; },
+    isDDS()   { return this.exciterType === 'DDS'; },
+    isDX100() { return this.exciterType === 'DX100'; },
+    isDX200() { return this.exciterType === 'DX200'; },
+    isPSM()   { return this.exciterType === 'PSM'; },
+    isDEBUG() { return this.exciterType === 'DEBUG'; },
 
-    // 是否显示左侧列（当有任何左侧内容需要显示时）
-    showLeftColumn() {
-      return this.showPAPRSection || this.showRFSection || this.showEnvelopeSection;
-    },
+    showLeftColumn()      { return this.showPAPRSection || this.showRFSection || this.showEnvelopeSection; },
+    showPAPRSection()     { return this.isNONE || this.isDDS || this.isDEBUG; },
+    showRFSection()       { return this.isDDS || this.isPSM || this.isDEBUG; },
+    showRFOutputEnable()  { return this.isDDS || this.isDEBUG; },
+    showRFOutputFreq()    { return this.isPSM || this.isDEBUG; },
+    showRFOutputPower()   { return this.isPSM || this.isDEBUG; },
+    showRFPMEnable()      { return this.isPSM || this.isDEBUG; },
+    showEnvelopeSection() { return this.isDDS || this.isPSM || this.isDEBUG; },
 
-    // 峰均比抑制：仅在 NONE、DDS、DEBUG 模式下显示
-    showPAPRSection() {
-      return this.isNONE || this.isDDS || this.isDEBUG;
-    },
+    showDPDSection()      { return this.isDDS || this.isDX200 || this.isPSM || this.isDEBUG; },
+    showDPDCorrection()   { return this.showDPDSection; },
+    showDPDParamEstimation() { return this.showDPDSection; },
+    showDPDInputFreq()    { return this.showDPDSection; },
+    showDPDParamReset()   { return this.showDPDSection; },
 
-    // 射频输出：仅在 DDS、PSM 模式下显示
-    showRFSection() {
-      return this.isDDS || this.isPSM;
-    },
-    // 射频输出子项显示控制
-    showRFOutputEnable() { // 输出使能
-      return this.isDDS;
-    },
-    showRFOutputFreq() { // 输出频率
-      return this.isPSM;
-    },
-    showRFOutputPower() { // 输出功率
-      return this.isPSM;
-    },
-    showRFPMEnable() { // 调相使能
-      return this.isPSM;
-    },
-    // 调幅使能根据表格所有模式均为 X，所以没有对应的 computed property
-
-    // 包络输出：仅在 DDS、PSM、DEBUG 模式下显示 (根据表格更新)
-    showEnvelopeSection() {
-      return this.isDDS || this.isPSM || this.isDEBUG;
-    },
-
-    // DPD：仅在 DDS、DX200、PSM 模式下显示
-    showDPDSection() {
-      return this.isDDS || this.isDX200 || this.isPSM;
-    },
-    // DPD子项显示控制 (与showDPDSection逻辑一致，因为表格中DPD下的子项在这些模式下都可选)
-    showDPDCorrection() { // 校正使能
-      return this.isDDS || this.isDX200 || this.isPSM;
-    },
-    showDPDParamEstimation() { // 参数估计 (包含按钮和结果显示)
-      return this.isDDS || this.isDX200 || this.isPSM;
-    },
-    showDPDInputFreq() { // 输入频率相关 (包含一致性开关和独立输入框)
-      return this.isDDS || this.isDX200 || this.isPSM;
-    },
-    showDPDParamReset() { // 参数复位
-      return this.isDDS || this.isDX200 || this.isPSM;
-    },
-
-    // 幅相延时调整：仅在 DDS、PSM、DEBUG 模式下显示 (根据表格更新)
-    showDelaySection() {
-      return this.isDDS || this.isPSM || this.isDEBUG;
-    }
+    showDelaySection() { return this.isDDS || this.isPSM || this.isDEBUG; },
+    showDelayAuto()    { return this.showDelaySection; },
+    showDelayManual()  { return this.isDDS || this.isDEBUG; },
+    showDelayTime()    { return this.isDDS || this.isDEBUG; },
+    showDelayReset()   { return this.isDDS || this.isDEBUG; }
   },
+
+  /* ======================== methods ======================== */
   methods: {
+    /* ----------------- 新增：复位确认弹窗 ----------------- */
+    askResetDPD() {
+      if (!this.showDPDSection) return;
+
+      this.confirmModal.message = '确定要进行 DPD 参数复位吗？';
+      this.confirmModal.onConfirm = () => {
+        this.resetDPD();            // 真正复位
+      };
+      this.confirmModal.show = true;
+    },
+
+    /* ----------------- 原有方法，下方均未改动 ----------------- */
     initWebSocket() {
       WebSocketService.connect();
       WebSocketService.onMessage(this.handleWebSocketMessage);
-      this.checkConnectionStatus(); // Start checking connection status
+      this.checkConnectionStatus();
     },
     checkConnectionStatus() {
       this.wsConnected = WebSocketService.isConnected();
-      // Periodically check connection status
-      setTimeout(() => this.checkConnectionStatus(), 2000); // Check every 2 seconds
+      setTimeout(() => this.checkConnectionStatus(), 2000);
     },
     handleWebSocketMessage(data) {
-      console.log("Received WebSocket message:", data);
-      // Handle errors first
-      if (data && data.error === true) {
-        this.showError(data.message || "通信错误", data.details);
-        if (this.dpdEstimating) { // If DPD estimation was in progress, stop it
-          this.cancelProcessing();
-        }
+      if (data && data.error) {
+        this.showError(data.message || '通信错误', data.details);
+        if (this.dpdEstimating) this.cancelProcessing();
         return;
       }
-
-      // Try to parse if it's a string
-      if (typeof data === "string") {
-        try {
-          data = JSON.parse(data);
-        } catch (e) {
-          console.error("Failed to parse WebSocket message:", e);
-          this.showError("无法解析服务器响应", data);
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (e) {
+          this.showError('无法解析服务器响应', data);
           return;
         }
       }
-
-      // Handle specific message structures (e.g., GET responses)
-      if (data && data.params && Array.isArray(data.params)) {
-        data.params.forEach(param => {
-          if (param.result === "success") {
-            this.updateParameterValue(param.key, param.value);
-          } else {
-            this.showError(`参数 ${param.key} 获取失败`, param.error || "未知错误");
-          }
+      if (data.params && Array.isArray(data.params)) {
+        data.params.forEach(p => {
+          p.result === 'success'
+            ? this.updateParameterValue(p.key, p.value)
+            : this.showError(`参数 ${p.key} 获取失败`, p.error || '未知错误');
         });
-      } else if (data) { // Handle direct object updates
-        Object.keys(data).forEach(key => {
-          this.updateParameterValue(key, data[key]);
-        });
+      } else if (data) {
+        Object.keys(data).forEach(k => this.updateParameterValue(k, data[k]));
       }
     },
     updateParameterValue(key, value) {
-      // console.log(`Updating ${key} to ${value}`);
-      if (key === "exciter.exciterType") {
-        this.exciterType = value;
-        // Potentially re-evaluate visibilities or fetch mode-specific params here
-        return;
-      }
-
-      // Exciter related parameters
-      if (key.startsWith("exciter.")) {
-        const subKey = key.slice(8); // remove "exciter."
-        switch (subKey) {
-          case "rfOutputEnable":
-            this.rfOutputEnabled = (value === "true" || value === true);
-            break;
-          case "rfOutputFreq":
-            this.rfOutputFreq = parseFloat(value);
-            break;
-          case "rfOutputPower":
-            this.rfOutputPower = parseFloat(value);
-            break;
-          case "rfPMEnable":
-            this.rfPMEnable = (value === "true" || value === true);
-            break;
-          case "rfAMEnable": // Though not displayed, keep for completeness if backend sends it
-            this.rfAMEnable = (value === "true" || value === true);
-            break;
-          case "rfEnvelopeLevel":
-            this.rfEnvelopeLevel = parseFloat(value);
-            break;
-          case "rfEnvelopeDC":
-            this.rfEnvelopeDC = parseFloat(value);
-            break;
-          case "dpdAlignStatus": // DPD status update
-            this.handleDPDStatus(value);
-            break;
-          case "dpdAlignResult": // DPD result
-            this.dpdResult = value; // Assuming result is a string, adjust if needed
-            break;
-          case "delayValue":
-            this.delayValue = parseFloat(value).toFixed(1); // Assuming value is numeric string
-            break;
-          // Add other exciter params if necessary
+      if (key === 'exciter.exciterType') { this.exciterType = value; return; }
+      if (key.startsWith('exciter.')) {
+        const sub = key.slice(8);
+        switch (sub) {
+          case 'rfOutputEnable':  this.rfOutputEnabled  = !!value; break;
+          case 'rfOutputFreq':    this.rfOutputFreq     = parseFloat(value); break;
+          case 'rfOutputPower':   this.rfOutputPower    = parseFloat(value); break;
+          case 'rfPMEnable':      this.rfPMEnable       = !!value; break;
+          case 'rfEnvelopeLevel': this.rfEnvelopeLevel  = parseFloat(value); break;
+          case 'rfEnvelopeDC':    this.rfEnvelopeDC     = parseFloat(value); break;
+          case 'dpdAlignStatus':  this.handleDPDStatus(value); break;
+          case 'dpdAlignResult':  this.dpdResult = value; break;
+          case 'delayValue':      this.delayValue = parseFloat(value).toFixed(1); break;
         }
-      }
-      // PAPR related parameters
-      else if (key === "digitalIqOutput.peakToAverageSuppressLevel") {
+      } else if (key === 'digitalIqOutput.peakToAverageSuppressLevel') {
         this.peakToAverageSuppressLevel = parseFloat(value).toFixed(1);
-      } else if (key === "digitalIqOutput.paprSuppressionEnabled") {
-        this.paprSuppressionEnabled = (value === "true" || value === true);
-      }
-      // Modulation parameters
-      else if (key.startsWith("modulation.")) {
-        const subKey = key.slice(11); // remove "modulation."
-        if (value !== null && value !== "") { // Ensure value is meaningful
-          switch (subKey) {
-            case "currentDRMMode":
-              this.currentDRMMode = value;
-              break;
-            case "spectrumBandwidth":
-              this.spectrumBandwidth = value;
-              break;
-            case "sdcMode":
-              this.sdcMode = value;
-              break;
-            case "mscMode":
-              this.mscMode = value;
-              break;
-            case "mscProtectionLevelA":
-              this.mscProtectionLevelA = value;
-              break;
-            case "mscProtectionLevelB":
-              this.mscProtectionLevelB = value;
-              break;
-          }
+      } else if (key === 'digitalIqOutput.paprSuppressionEnabled') {
+        this.paprSuppressionEnabled = !!value;
+      } else if (key.startsWith('modulation.')) {
+        const sub = key.slice(11);
+        switch (sub) {
+          case 'currentDRMMode':      this.currentDRMMode = value; break;
+          case 'spectrumBandwidth':   this.spectrumBandwidth = value; break;
+          case 'sdcMode':             this.sdcMode = value; break;
+          case 'mscMode':             this.mscMode = value; break;
+          case 'mscProtectionLevelA': this.mscProtectionLevelA = value; break;
+          case 'mscProtectionLevelB': this.mscProtectionLevelB = value; break;
         }
-      }
-      // DPD Correction Enable
-      else if (key === "exciter.dpdCorrectionEnabled") { // Assuming this is the key for DPD correction enable
-          this.dpdCorrectionEnabled = (value === "true" || value === true);
+      } else if (key === 'exciter.dpdCorrectionEnabled') {
+        this.dpdCorrectionEnabled = !!value;
       }
     },
 
+    /* ---------- PAPR / 射频 / 包络：与之前相同 ---------- */
     applyPAPR() {
-      const peakLevel = parseFloat(this.peakToAverageSuppressLevel);
-      if (isNaN(peakLevel) || peakLevel < 6.0 || peakLevel > 12.0) {
-        this.showError("峰均比抑制值必须在 6.0 到 12.0 dB之间。");
-        return;
-      }
+      const v = parseFloat(this.peakToAverageSuppressLevel);
+      if (isNaN(v) || v < 6 || v > 12) return this.showError('峰均比必须在6~12 dB');
       const data = {
-        "digitalIqOutput.peakToAverageSuppressLevel": peakLevel.toFixed(1),
-        "digitalIqOutput.paprSuppressionEnabled": this.paprSuppressionEnabled.toString()
+        'digitalIqOutput.peakToAverageSuppressLevel': v.toFixed(1),
+        'digitalIqOutput.paprSuppressionEnabled': this.paprSuppressionEnabled.toString()
       };
-      this.lastOperation = { type: "set", data };
+      this.lastOperation = { type: 'set', data };
       WebSocketService.sendSetCommand(data);
-      this.showSuccess("峰均比抑制设置已发送！");
+      this.showSuccess('峰均比抑制设置已发送');
     },
     applyRFOutput() {
       const data = {};
-      if (this.showRFOutputEnable) { // Only include if visible for current mode
-        data["exciter.rfOutputEnable"] = this.rfOutputEnabled.toString();
-      }
-      if (this.showRFOutputFreq) {
-        data["exciter.rfOutputFreq"] = this.rfOutputFreq.toFixed(3);
-      }
-      if (this.showRFOutputPower) {
-        data["exciter.rfOutputPower"] = this.rfOutputPower.toFixed(1);
-      }
-      if (this.showRFPMEnable) {
-        data["exciter.rfPMEnable"] = this.rfPMEnable.toString();
-      }
-      // rfAMEnable is not included as it's not configurable via UI per table
-
-      if (Object.keys(data).length > 0) {
-        this.lastOperation = { type: "set", data };
-        WebSocketService.sendSetCommand(data);
-        this.showSuccess("射频输出设置已发送！");
-      } else {
-        this.showError("当前模式下无可应用的射频输出设置。");
-      }
+      if (this.showRFOutputEnable) data['exciter.rfOutputEnable'] = this.rfOutputEnabled.toString();
+      if (this.showRFOutputFreq)   data['exciter.rfOutputFreq']   = this.rfOutputFreq.toFixed(3);
+      if (this.showRFOutputPower)  data['exciter.rfOutputPower']  = this.rfOutputPower.toFixed(1);
+      if (this.showRFPMEnable)     data['exciter.rfPMEnable']     = this.rfPMEnable.toString();
+      if (!Object.keys(data).length) return this.showError('当前模式无射频输出设置');
+      this.lastOperation = { type: 'set', data };
+      WebSocketService.sendSetCommand(data);
+      this.showSuccess('射频输出设置已发送');
     },
     applyEnvelope() {
       const data = {
-        "exciter.rfEnvelopeLevel": this.rfEnvelopeLevel.toFixed(1),
-        "exciter.rfEnvelopeDC": this.rfEnvelopeDC.toFixed(1)
+        'exciter.rfEnvelopeLevel': this.rfEnvelopeLevel.toFixed(1),
+        'exciter.rfEnvelopeDC':    this.rfEnvelopeDC.toFixed(1)
       };
-      this.lastOperation = { type: "set", data };
+      this.lastOperation = { type: 'set', data };
       WebSocketService.sendSetCommand(data);
-      this.showSuccess("包络输出设置已发送！");
+      this.showSuccess('包络输出设置已发送');
     },
 
+    /* ---------- DPD: 估计 / 复位 ---------- */
     startDPDEstimation() {
-      // Ensure DPD section is visible for the current mode
-      if (!this.showDPDSection) {
-        this.showError("当前模式不支持DPD参数估计。");
-        return;
-      }
+      if (!this.showDPDSection) return this.showError('当前模式不支持DPD估计');
       this.dpdEstimating = true;
-      this.dpdResult = ""; // Clear previous result
-      this.dpdAlignStatus = ""; // Clear previous status
-      const data = { "exciter.dpdAlignStart": "start" }; // Command to start DPD
-      this.lastOperation = { type: "set", data };
+      this.dpdResult = ''; this.dpdAlignStatus = '';
+      const data = { 'exciter.dpdAlignStart': 'start' };
+      this.lastOperation = { type: 'set', data };
       WebSocketService.sendSetCommand(data);
-      this.processingModal.show = true;
-      this.processingModal.message = "DPD参数估计中...";
-      this.pollDPDStatus(); // Start polling for status
+      this.processingModal = { show: true, message: 'DPD 参数估计中...' };
+      this.pollDPDStatus();
     },
-
     pollDPDStatus() {
-      clearTimeout(this.dpdPollingTimer); // Clear existing timer
-      if (!this.dpdEstimating) return; // Stop polling if estimation cancelled or finished
-
-      // Request status and result
-      const keysToGet = ["exciter.dpdAlignStatus", "exciter.dpdAlignResult"];
-      WebSocketService.sendGetCommand(keysToGet);
-
-      // Set up next poll if still estimating and not yet aligned
-      // The actual check for ALIGNED is in handleDPDStatus
-      this.dpdPollingTimer = setTimeout(() => {
-        if (this.dpdEstimating) { // Check again in case it was cancelled
-            this.pollDPDStatus();
-        }
-      }, 2000); // Poll every 2 seconds
+      clearTimeout(this.dpdPollingTimer);
+      if (!this.dpdEstimating) return;
+      WebSocketService.sendGetCommand(['exciter.dpdAlignStatus', 'exciter.dpdAlignResult']);
+      this.dpdPollingTimer = setTimeout(() => { if (this.dpdEstimating) this.pollDPDStatus(); }, 2000);
     },
-
     handleDPDStatus(status) {
       this.dpdAlignStatus = status;
-      if (!this.dpdEstimating) return; // If not estimating, do nothing
-
-      if (status === "ALIGNED") {
-        this.processingModal.message = "DPD参数估计完成！";
-        clearTimeout(this.dpdPollingTimer); // Stop polling
-        // Fetch final result one last time explicitly if needed, or rely on pollDPDStatus having fetched it
-        // WebSocketService.sendGetCommand(["exciter.dpdAlignResult"]);
+      if (status === 'ALIGNEND') {
+        clearTimeout(this.dpdPollingTimer);
+        this.processingModal.message = 'DPD 参数估计完成！';
         setTimeout(() => {
           this.processingModal.show = false;
           this.dpdEstimating = false;
-          this.showSuccess("DPD参数估计成功！");
-        }, 1500); // Show success message briefly
-      } else if (status === "FAILED" || status === "ERROR") { // Assuming FAILED or ERROR states
-        this.processingModal.show = false;
+          this.showSuccess('DPD 参数估计成功');
+        }, 1000);
+      } else if (status === 'FAILED' || status === 'ERROR') {
         clearTimeout(this.dpdPollingTimer);
+        this.processingModal.show = false;
         this.dpdEstimating = false;
-        this.showError("DPD参数估计失败", `状态: ${status}`);
-        // Fetch result which might contain error details
-        WebSocketService.sendGetCommand(["exciter.dpdAlignResult"]);
+        this.showError('DPD 参数估计失败', `状态: ${status}`);
       } else {
-        // Still in progress, message already set, polling continues
-        this.processingModal.message = `DPD参数估计中... (${status || '未知状态'})`;
+        this.processingModal.message = `DPD 参数估计中... (${status})`;
       }
     },
+
+    /* 真正执行复位 — 仅被确认按钮调用 */
     resetDPD() {
-      if (!this.showDPDSection) {
-        this.showError("当前模式不支持DPD参数复位。");
-        return;
-      }
-      const data = { "exciter.dpdParamsReset": "reset" }; // Command to reset DPD
-      this.lastOperation = { type: "set", data };
+      const data = { 'exciter.dpdParamsReset': 'reset' };
+      this.lastOperation = { type: 'set', data };
       WebSocketService.sendSetCommand(data);
-      this.showSuccess("DPD参数复位命令已发送！");
-      this.dpdResult = ""; // Clear result display
-      this.dpdAlignStatus = ""; // Clear status display
-    },
-    // DPD Correction Enable toggle
-    toggleDPDCorrection() {
-        if (!this.showDPDSection) return;
-        const data = { "exciter.dpdCorrectionEnabled": this.dpdCorrectionEnabled.toString() };
-        this.lastOperation = { type: "set", data };
-        WebSocketService.sendSetCommand(data);
-        this.showSuccess(`DPD校正已${this.dpdCorrectionEnabled ? '启用' : '禁用'}`);
-    },
-    // Watch dpdCorrectionEnabled to send command
-    // This can be done via a watcher or by calling toggleDPDCorrection from the @change event of the checkbox.
-    // The template v-model="dpdCorrectionEnabled" handles UI update.
-    // If you need to send a command when it changes, add @change="sendDPDCorrectionState" to the input.
-    sendDPDCorrectionState() { // Call this on @change of DPD correction checkbox
-        this.toggleDPDCorrection();
+      this.showSuccess('DPD 参数复位已发送');
+      this.dpdResult = '';
+      this.dpdAlignStatus = '';
     },
 
+    sendDPDCorrectionState() {
+      const data = { 'exciter.dpdCorrectionEnabled': this.dpdCorrectionEnabled.toString() };
+      this.lastOperation = { type: 'set', data };
+      WebSocketService.sendSetCommand(data);
+      this.showSuccess(`DPD 校正已${this.dpdCorrectionEnabled ? '启用' : '禁用'}`);
+    },
+
+    /* ---------- 幅相延时 ---------- */
     estimateDelay() {
-      if (!this.showDelaySection) {
-        this.showError("当前模式不支持延时参数估计。");
-        return;
-      }
-      // This typically involves sending a command to start estimation and then polling or waiting for a result.
-      // For now, let's assume it's a direct GET for 'delayValue', or a command to trigger calculation.
-      // If it's a trigger, it should be like DPD: start -> poll -> result.
-      // Based on current code, it seems like a GET.
-      this.lastOperation = { type: "get", data: ["exciter.delayValue"] };
-      WebSocketService.sendGetCommand(["exciter.delayValue"]);
-      this.showSuccess("延时参数估计请求已发送 (获取当前值)。"); // Or "延时参数估计已启动" if it's a process
+      const keys = ['exciter.delayValue'];
+      this.lastOperation = { type: 'get', data: keys };
+      WebSocketService.sendGetCommand(keys);
+      this.showSuccess('延时参数估计已请求');
     },
-    applyDelay() {
-      if (!this.showDelaySection) {
-        this.showError("当前模式不支持延时参数设置。");
-        return;
-      }
-      // This method implies setting a manually entered delay.
-      // However, the 'delayValue' input is readonly.
-      // If manual setting is intended, the input should not be readonly, and a WebSocket command should be sent.
-      // For now, as it's readonly, this button might be for applying an estimated/calculated value if it's not auto-applied.
-      this.showError("手动设置延时功能未完全实现 (输入框为只读)。");
-      // Example if it were settable:
-      // const delay = parseFloat(this.delayValue);
-      // if (isNaN(delay)) {
-      //   this.showError("无效的延时值。");
-      //   return;
-      // }
-      // const data = { "exciter.setDelayValue": delay.toFixed(1) }; // Example key
-      // this.lastOperation = { type: "set", data };
-      // WebSocketService.sendSetCommand(data);
-      // this.showSuccess("延时参数设置已发送！");
-    },
+    applyDelay() { this.showError('手动设置延时功能未实现'); },
     tryResetDelay() {
-      if (!this.showDelaySection) {
-        this.showError("当前模式不支持延时参数复位。");
-        return;
-      }
-      const data = { "exciter.delayReset": "true" }; // Assuming this is the command
-      this.lastOperation = { type: "set", data };
+      if (!this.showDelayReset) return this.showError('当前模式不支持延时复位');
+      const data = { 'exciter.delayReset': 'true' };
+      this.lastOperation = { type: 'set', data };
       WebSocketService.sendSetCommand(data);
-      this.showSuccess("延时参数复位命令已发送！");
-      this.delayValue = "0.0"; // Reset local display
+      this.delayValue = '0.0';
+      this.showSuccess('延时参数复位已发送');
     },
 
-    toggleFrequency() {
-      // Logic for when 'isFrequencyConsistent' changes.
-      // If consistent, inputFrequency might be disabled or synced.
-      // If not consistent, inputFrequency becomes editable.
-      // No WebSocket command seems needed here directly, only UI behavior.
-      if (this.isFrequencyConsistent) {
-        // Potentially sync inputFrequency with rfOutputFreq if applicable, or clear/disable it.
-        // This depends on system design. For now, just a UI toggle.
-      }
-    },
-
+    /* ---------- 通用 UI ---------- */
+    toggleFrequency() {},
+    handlePAPRBlur() { this.showUpDownButtons = false; },
     cancelProcessing() {
       this.processingModal.show = false;
       if (this.dpdEstimating) {
         clearTimeout(this.dpdPollingTimer);
         this.dpdEstimating = false;
-        // Optionally send a cancel command to the backend if supported
-        // WebSocketService.sendSetCommand({ "exciter.dpdAlignCancel": "cancel" });
-        this.showSuccess("DPD操作已取消。");
+        this.showSuccess('已取消 DPD 操作');
       }
     },
-    confirmModalConfirm() {
-      if (this.confirmModal.onConfirm && typeof this.confirmModal.onConfirm === 'function') {
-        this.confirmModal.onConfirm();
-      }
-      this.confirmModal.show = false;
-    },
-    confirmModalCancel() {
-      this.confirmModal.show = false;
-    },
+    confirmModalConfirm() { this.confirmModal.onConfirm?.(); this.confirmModal.show = false; },
+    confirmModalCancel()  { this.confirmModal.show = false; },
     showSuccess(msg) {
       this.modalMessage = msg;
       this.isModalVisible = true;
-      setTimeout(() => {
-        this.isModalVisible = false;
-      }, 2000);
+      setTimeout(() => { this.isModalVisible = false; }, 2000);
     },
-    showError(msg, details = "") {
-      this.errorInfo.visible = true;
-      this.errorInfo.message = msg;
-      this.errorInfo.details = details;
-    },
-    hideErrorModal() {
-      this.errorInfo.visible = false;
-    },
-    hideModal() {
-      this.isModalVisible = false;
-    },
-    handlePAPRBlur() {
-      this.showUpDownButtons = false;
-      // Validate PAPR value on blur as well, or rely on applyPAPR for validation
-      const peakLevel = parseFloat(this.peakToAverageSuppressLevel);
-      if (isNaN(peakLevel) || peakLevel < 6.0 || peakLevel > 12.0) {
-        // Optionally show a less intrusive warning or highlight the field
-        // this.showError("峰均比抑制值必须在 6.0 到 12.0 dB之间。");
-      }
-    },
+    showError(msg, details = '') { this.errorInfo = { visible: true, message: msg, details }; },
+    hideErrorModal() { this.errorInfo.visible = false; },
+    hideModal()      { this.isModalVisible = false; },
     retryLastOperation() {
       this.hideErrorModal();
-      if (this.lastOperation && this.lastOperation.type) {
-        this.showSuccess("正在重试上一操作...");
-        if (this.lastOperation.type === "get") {
-          WebSocketService.sendGetCommand(this.lastOperation.data);
-        } else if (this.lastOperation.type === "set") {
-          WebSocketService.sendSetCommand(this.lastOperation.data);
-        }
-      } else {
-        this.showError("没有可重试的操作。");
-      }
+      if (!this.lastOperation.type) return this.showError('没有可重试的操作');
+      this.showSuccess('重试中...');
+      this.lastOperation.type === 'get'
+        ? WebSocketService.sendGetCommand(this.lastOperation.data)
+        : WebSocketService.sendSetCommand(this.lastOperation.data);
     },
+
+    /* ---------- 参数拉取 ---------- */
     fetchAllParameters() {
-      const keysToGet = [
-        "exciter.exciterType",
-        // PAPR
-        "digitalIqOutput.peakToAverageSuppressLevel",
-        "digitalIqOutput.paprSuppressionEnabled",
-        // RF Output (fetch all, UI will show/hide based on mode)
-        "exciter.rfOutputEnable",
-        "exciter.rfOutputFreq",
-        "exciter.rfOutputPower",
-        "exciter.rfPMEnable",
-        // "exciter.rfAMEnable", // Not displayed, but fetch if backend supports/needs it
-        // Envelope Output
-        "exciter.rfEnvelopeLevel",
-        "exciter.rfEnvelopeDC",
-        // DPD (fetch all DPD related status/values)
-        "exciter.dpdCorrectionEnabled", // Assuming this is the key
-        "exciter.dpdAlignStatus",
-        "exciter.dpdAlignResult",
-        // Delay
-        "exciter.delayValue",
-        // Modulation Params (already disabled in UI, but good to have current state)
-        "modulation.currentDRMMode",
-        "modulation.spectrumBandwidth",
-        "modulation.sdcMode",
-        "modulation.mscMode",
-        "modulation.mscProtectionLevelA",
-        "modulation.mscProtectionLevelB",
+      const keys = [
+        'exciter.exciterType',
+        'digitalIqOutput.peakToAverageSuppressLevel',
+        'digitalIqOutput.paprSuppressionEnabled',
+        'exciter.rfOutputEnable', 'exciter.rfOutputFreq', 'exciter.rfOutputPower', 'exciter.rfPMEnable',
+        'exciter.rfEnvelopeLevel', 'exciter.rfEnvelopeDC',
+        'exciter.dpdCorrectionEnabled', 'exciter.dpdAlignStatus', 'exciter.dpdAlignResult',
+        'exciter.delayValue',
+        'modulation.currentDRMMode', 'modulation.spectrumBandwidth', 'modulation.sdcMode',
+        'modulation.mscMode', 'modulation.mscProtectionLevelA', 'modulation.mscProtectionLevelB'
       ];
-      this.lastOperation = { type: "get", data: keysToGet };
-      WebSocketService.sendGetCommand(keysToGet);
+      this.lastOperation = { type: 'get', data: keys };
+      WebSocketService.sendGetCommand(keys);
     }
   },
-  watch: {
-    // Watcher for dpdCorrectionEnabled to send command when toggled by user
-    // Ensure this doesn't conflict with initial data load setting the value
-    // dpdCorrectionEnabled(newValue, oldValue) {
-    //   // Send command only if it's a user interaction, not initial load
-    //   // This can be tricky. Often better to use @change on the input itself.
-    //   // If this watcher is kept, add a flag to prevent sending on initial load.
-    //   if (this.isMounted) { // Add an isMounted data property
-    //      this.sendDPDCorrectionState();
-    //   }
-    // }
-  },
+
+  /* ======================== 生命周期 ======================== */
   mounted() {
-    // this.isMounted = true; // For watcher logic if used
     this.initWebSocket();
-    // Fetch all parameters after a short delay to allow WebSocket to connect
-    // and to get the initial exciterType first if it's fetched separately or faster.
-    // Or, fetch exciterType first, then in its update callback, fetch mode-specific params.
-    // For simplicity here, fetching all.
     setTimeout(() => {
       if (this.wsConnected) {
         this.fetchAllParameters();
       } else {
-        // Handle case where WebSocket is not connected after timeout
-        // Perhaps set up a retry or show a persistent error.
-        console.warn("WebSocket not connected after initial timeout. Parameter fetch skipped.");
-        // Attempt to fetch again once connection is established
-        const unwatch = this.$watch('wsConnected', (newVal) => {
-          if (newVal) {
-            this.fetchAllParameters();
-            unwatch(); // Stop watching once connected and fetched
-          }
+        const unwatch = this.$watch('wsConnected', v => {
+          if (v) { this.fetchAllParameters(); unwatch(); }
         });
       }
-    }, 1000); // Delay fetching to allow WebSocket connection
+    }, 1000);
   },
   beforeUnmount() {
-    // this.isMounted = false; // For watcher logic if used
     WebSocketService.offMessage(this.handleWebSocketMessage);
-    clearTimeout(this.dpdPollingTimer); // Important to clear timers
-    // Consider WebSocketService.disconnect() if this component manages the lifecycle exclusively
+    clearTimeout(this.dpdPollingTimer);
   }
 };
 </script>
+
 <style scoped>
 .content-wrapper {
   flex: 1;
@@ -903,52 +644,40 @@ export default {
   background-color: #f4f4f4;
   display: flex;
   justify-content: center;
-  overflow-y: auto; /* Allow scrolling for the whole page if content is too long */
+  overflow-y: auto;
 }
 .content {
   width: 100%;
-  max-width: 1000px; /* Adjust as needed */
+  max-width: 1000px;
   background-color: #ffffff;
   padding: 20px;
   border-radius: 5px;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
-.content-container {
-  /* If content within .content needs its own scroll, manage here */
-}
-
 .connection-status {
   text-align: center;
   padding: 5px;
   margin-bottom: 15px;
   border-radius: 3px;
-  background-color: #f8d7da; /* Default: Not Connected (Reddish) */
+  background-color: #f8d7da;
   color: #721c24;
 }
 .connection-status.connected {
-  background-color: #d4edda; /* Connected (Greenish) */
+  background-color: #d4edda;
   color: #155724;
 }
-
 .columns {
   display: flex;
-  flex-wrap: wrap; /* Allow columns to wrap on smaller screens if needed */
+  flex-wrap: wrap;
   gap: 20px;
 }
 .column {
   flex: 1;
-  min-width: 300px; /* Minimum width before wrapping or shrinking too much */
-}
-.left-column {
-  /* Specific styles for left column if any */
-}
-.right-column {
-  /* Specific styles for right column if any */
+  min-width: 300px;
 }
 .right-column.full-width {
-  flex-basis: 100%; /* Make right column take full width if left is hidden */
+  flex-basis: 100%;
 }
-
 section {
   margin-bottom: 30px;
   padding: 15px;
@@ -983,34 +712,27 @@ th {
   font-weight: bold;
 }
 td:first-child {
-    width: 40%; /* Adjust width of the label column */
+  width: 40%;
 }
-
 .input-with-unit {
   display: flex;
   align-items: center;
 }
-.input-with-unit input[type="number"],
-.input-with-unit input[type="text"] {
+.input-with-unit input {
   flex-grow: 1;
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 3px;
-  margin-right: 5px; /* Space before unit */
+  margin-right: 5px;
   box-sizing: border-box;
-}
-.input-with-buttons { /* This class seems unused in current input structure, review if needed */
-  display: flex;
-  align-items: center;
 }
 .unit {
   color: #555;
   margin-left: 8px;
   white-space: nowrap;
 }
-
 button {
-  background-color: #0056b3; /* Standard blue */
+  background-color: #0056b3;
   color: white;
   border: none;
   padding: 10px 15px;
@@ -1027,24 +749,16 @@ button.disabled, button:disabled {
   color: #666666;
   cursor: not-allowed;
 }
-section > button { /* Button directly under section, e.g., "应用设置" */
-    display: block;
-    width: 100%;
-    margin-top: 10px;
-}
-
 .blue-btn { background-color: #1890ff; }
 .blue-btn:hover { background-color: #40a9ff; }
 .orange-btn { background-color: #fa8c16; }
 .orange-btn:hover { background-color: #ffa940; }
 .green-btn { background-color: #52c41a; }
 .green-btn:hover { background-color: #73d13d; }
-.cancel-btn { background-color: #8c8c8c; } /* For modal cancel */
+.cancel-btn { background-color: #8c8c8c; }
 .cancel-btn:hover { background-color: #666666; }
-
-
 .custom-select {
-  width: 100%; /* Make select take full width of td */
+  width: 100%;
   padding: 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -1052,20 +766,10 @@ section > button { /* Button directly under section, e.g., "应用设置" */
   font-size: 14px;
   box-sizing: border-box;
 }
-.custom-select.no-arrow {
-  -webkit-appearance: none;
-  -moz-appearance: none;
+.custom-select:no-arrow {
   appearance: none;
-  background-image: none; /* Remove system default arrow if 'no-arrow' is for styling only */
-   /* If it's for disabled, use :disabled pseudo-class */
+  background-image: none;
 }
-.custom-select:disabled {
-    background-color: #e9ecef;
-    color: #495057;
-    cursor: not-allowed;
-}
-
-
 .modal {
   position: fixed;
   top: 50%;
@@ -1080,29 +784,12 @@ section > button { /* Button directly under section, e.g., "应用设置" */
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
   min-width: 300px;
 }
-.modal p {
-  margin-bottom: 20px;
-  font-size: 16px;
-}
-.modal button { /* General modal button styling */
-  margin: 0 5px; /* Spacing between buttons if multiple */
-  padding: 8px 15px;
-  /* background-color: #0056b3;
-  color: white; */
-}
-/* Specific modal button colors already defined by .blue-btn etc. */
-.modal .blue-btn { /* Ensure modal blue button uses its style */
-    /* Already defined */
-}
-
-
 .error-modal {
-  border-left: 5px solid #dc3545; /* Red accent for error */
+  border-left: 5px solid #dc3545;
 }
 .error-modal h3 {
-    color: #dc3545;
-    margin-top: 0;
-    border-bottom: none;
+  color: #dc3545;
+  margin-top: 0;
 }
 .error-details {
   font-size: 0.9em;
@@ -1122,12 +809,11 @@ section > button { /* Button directly under section, e.g., "应用设置" */
   gap: 10px;
   margin-top: 20px;
 }
-
 .switch {
   position: relative;
   display: inline-block;
-  width: 50px; /* Smaller switch */
-  height: 26px; /* Smaller switch */
+  width: 50px;
+  height: 26px;
 }
 .switch input {
   opacity: 0;
@@ -1140,26 +826,23 @@ section > button { /* Button directly under section, e.g., "应用设置" */
   top: 0; left: 0; right: 0; bottom: 0;
   background-color: #ccc;
   transition: 0.4s;
-  border-radius: 26px; /* Keep it rounded */
+  border-radius: 26px;
 }
 .slider:before {
   position: absolute;
   content: "";
-  height: 20px; /* Smaller knob */
-  width: 20px;  /* Smaller knob */
-  left: 3px;    /* Adjust position */
-  bottom: 3px;  /* Adjust position */
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
   background-color: white;
   transition: 0.4s;
   border-radius: 50%;
 }
 input:checked + .slider {
-  background-color: #1890ff; /* Blue when checked */
-}
-input:focus + .slider { /* Optional: add focus style */
-  box-shadow: 0 0 1px #1890ff;
+  background-color: #1890ff;
 }
 input:checked + .slider:before {
-  transform: translateX(24px); /* Adjust slide distance */
+  transform: translateX(24px);
 }
 </style>

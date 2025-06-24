@@ -2,171 +2,88 @@
   <div class="content-wrapper">
     <div class="content">
       <div class="content-container">
-        <h2>时钟同步</h2>
-
         <!-- WebSocket连接状态显示 -->
         <div class="connection-status" :class="{ connected: wsConnected }">
           WebSocket状态: {{ wsConnected ? '已连接' : '未连接' }}
         </div>
 
-        <!-- 参数设置表格 -->
-        <table>
-          <tr>
-            <th>项目</th>
-            <th>值/设置</th>
-          </tr>
-          <!-- 时钟源：下拉选择 -->
-          <tr>
-            <td>时钟源</td>
-            <td>
-              <select v-model="clockSource">
-                <option value="INT_10MHz">INT_10MHz: 内部10MHz</option>
-                <option value="EXT_10MHz">EXT_10MHz: 外部10MHz</option>
-                <option value="GNSS">GNSS</option>
-              </select>
-            </td>
-          </tr>
-          <!-- SFN偏移 -->
-          <tr>
-            <td>SFN偏移</td>
-            <td>
-              <input 
-                type="number" 
-                v-model="sfnOffset" 
-                min="-999" max="999"
-                placeholder="请输入SFN偏移"
-                :class="{ 'error': sfnOffset < -999 || sfnOffset > 999 }"
-              />
-              <span>微秒   范围：-999 ~ 999</span>
-              <div v-if="sfnOffset < -999 || sfnOffset > 999" class="error-msg">
-                范围：-999 到 +999
-              </div>
-            </td>
-          </tr>
-          <!-- 输出频率校正（仅 debugEnable 为 true 时显示） -->
-          <tr v-if="debugEnable">
-            <td>输出频率校正</td>
-            <td>
-              <input 
-                type="number" 
-                v-model="freqCorrection" 
-                min="-1000" max="1000"
-                placeholder="请输入频率校正值"
-                :class="{ 'error': freqCorrection < -1000 || freqCorrection > 1000 }"
-              />
-              <span>PPB   范围：-1000 ~ 1000</span>
-              <div v-if="freqCorrection < -1000 || freqCorrection > 1000" class="error-msg">
-                范围：-1000 到 +1000
-              </div>
-            </td>
-          </tr>
-          <!-- VTCXO电压字（仅 debugEnable 为 true 时显示） -->
-          <tr v-if="debugEnable">
-            <td>VTCXO电压字</td>
-            <td>
-              <input 
-                type="number" 
-                v-model="vtcxoWord" 
-                min="0" max="65535"
-                placeholder="请输入VTCXO电压字"
-                :class="{ 'error': vtcxoWord < 0 || vtcxoWord > 65535 }"
-              />
-              <span>范围: 0 ~ 65535</span>
-              <div v-if="vtcxoWord < 0 || vtcxoWord > 65535" class="error-msg">
-                范围：0 到 65535
-              </div>
-            </td>
-          </tr>
-          <!-- GNSS锁定状态（只读） -->
-          <tr>
-            <td>GNSS锁定状态</td>
-            <td>{{ gnssLock }}</td>
-          </tr>
-          <!-- GNSS时间（只读） -->
-          <tr>
-            <td>GNSS时间</td>
-            <td>{{ gnssTime }}</td>
-          </tr>
-          <!-- 经度（只读） -->
-          <tr>
-            <td>经度</td>
-            <td>{{ longitude }}</td>
-          </tr>
-          <!-- 纬度（只读） -->
-          <tr>
-            <td>纬度</td>
-            <td>{{ latitude }}</td>
-          </tr>
-        </table>
-
-        <!-- 应用按钮与刷新按钮 -->
-        <div class="button-container">
-          <button @click="applyClockSync">应用</button>
-          <button @click="refreshClockSync">刷新</button>
-        </div>
-
-        <!-- 应用成功弹窗提示 -->
-        <div v-if="isApplyModalVisible" class="modal">
-          <p>应用成功！</p>
-          <button @click="hideApplyModal">关闭</button>
-        </div>
-
-        <!-- 刷新成功弹窗提示 -->
-        <div v-if="isRefreshModalVisible" class="modal">
-          <p>刷新成功！</p>
-          <button @click="hideRefreshModal">关闭</button>
-        </div>
-
-        <!-- 错误提示弹窗 -->
-        <div v-if="errorInfo.visible" class="modal error-modal">
-          <h3>错误</h3>
-          <p>{{ errorInfo.message }}</p>
-          <div v-if="errorInfo.details" class="error-details">{{ errorInfo.details }}</div>
-          <div class="modal-buttons">
-            <button @click="hideErrorModal">关闭</button>
-            <button @click="retryLastOperation">重试</button>
+        <h2>基带数据录制</h2>
+  
+        <!-- 录制时长输入框 -->
+        <div class="input-group">
+          <label for="recording-time">录制时长</label>
+          <div class="input-with-buttons">
+            <input 
+              id="recording-time"
+              v-model.number="recordingTime"
+              type="number"
+              min="0"
+              placeholder="输入录制时长"
+              @focus="showUpDownButtons = true"
+              @blur="showUpDownButtons = false"
+            />
+            <span>秒</span>
           </div>
         </div>
-
+  
+        <!-- 开始录制按钮 -->
+        <button 
+          :disabled="!recordingTime || isRecording"
+          @click="startRecording"
+          :class="{ 'start-recording': isRecording }"
+        >
+          {{ isRecording ? '正在录制' : '开始录制' }}
+        </button>
+  
+        <!-- 正在录制状态：显示已录制时间及停止录制按钮 -->
+        <div v-if="isRecording">
+          <p>已录制：{{ recordedTime }}秒</p>
+          <button @click="stopRecording">停止录制</button>
+        </div>
+  
+        <!-- 弹窗提示录制完成 -->
+        <div v-if="isModalVisible" class="modal">
+          <p>录制完成</p>
+        </div>
+  
+        <!-- 文件名与下载按钮 -->
+        <div class="input-group">
+          <label for="file-name">文件名</label>
+          <!-- 保留用户输入文件名；若用户没有输入，则自动显示后端返回的文件名 -->
+          <input id="file-name" v-model="fileName" type="text" placeholder="输入文件名（可选）" />
+        </div>
+        <button @click="downloadFile">下载</button>
       </div>
     </div>
   </div>
 </template>
-
+  
 <script>
 import WebSocketService from '@/store/websocket';
 
 export default {
-  name: 'ClockSync',
+  name: 'BasebandRecording',
   data() {
     return {
-      // 时钟同步各项
-      clockSource: 'INT_10MHz',
-      sfnOffset: 0,
-      freqCorrection: 0,
-      vtcxoWord: 0,
-      gnssLock: '',
-      gnssTime: '',
-      longitude: '',
-      latitude: '',
-
-      // debugEnable：控制频率校正与VTCXO电压字显示
-      debugEnable: false,
-
-      // 弹窗控制
-      isApplyModalVisible: false,
-      isRefreshModalVisible: false,
-
-      // WebSocket状态 & 错误信息
-      wsConnected: false,
-      errorInfo: { visible: false, message: '', details: '' },
-
-      // 记录上次操作，用于重试
-      lastOperation: { type: '', data: null }
+      recordingTime: 0,      // 用户设置的录制时长（秒）
+      recordedTime: 0,       // 显示的录制秒数，由本地计时器更新（后端返回的 recordedTime 不覆盖本地计时）
+      isRecording: false,    // 当前是否处于录制状态
+      isModalVisible: false, // 用于显示“录制完成”弹窗
+      showUpDownButtons: false, // 控制输入框旁上下按钮显示（备用）
+      fileName: '',          // 用户输入的保存文件名
+      recordData: "",        // 累计录制过程中接收到的所有数据
+      timer: null,           // 本地计时器ID
+      pollTimer: null,       // 后端轮询定时器ID
+      wsConnected: false,    // WebSocket连接状态
+      
+      // 后端返回的录制状态信息
+      recordStatus: "",
+      recordFileName: "",
+      recordFilePath: ""     // 例如："/home/ecdav/DRM_Modu_bin/record"
     };
   },
   methods: {
-    // 初始化 WebSocket
+    // ----------------------- WebSocket 初始化及状态监控 -----------------------
     initWebSocket() {
       WebSocketService.connect();
       WebSocketService.onMessage(this.handleWebSocketMessage);
@@ -174,171 +91,202 @@ export default {
     },
     checkConnectionStatus() {
       this.wsConnected = WebSocketService.isConnected();
-      setTimeout(this.checkConnectionStatus, 2000);
+      setTimeout(() => {
+        this.checkConnectionStatus();
+      }, 2000);
     },
-
-    // 处理服务器消息
+    
+    // ----------------------- 处理 WebSocket 消息 -----------------------
     handleWebSocketMessage(data) {
-      if (data && data.error) {
-        this.showError(data.message || '通信错误', data.details);
+      console.log('收到WebSocket消息:', data);
+      
+      if (data && data.error === true) {
+        console.error('WebSocket错误:', data.message || '未知错误');
         return;
       }
+      
       if (typeof data === 'string') {
-        try { data = JSON.parse(data); }
-        catch (e) {
-          this.showError('无法解析服务器响应', data);
-          return;
+        try {
+          data = JSON.parse(data);
+        } catch (e) {
+          console.error('解析WebSocket数据失败:', e);
         }
       }
-      if (data.params && Array.isArray(data.params)) {
-        data.params.forEach(p => {
-          if (p.result === 'success') this.updateParameterValue(p.key, p.value);
-          else this.showError(`参数 ${p.key} 获取失败`, p.error);
+      
+      // 处理后端返回的录制状态参数
+      if (data && data.params && Array.isArray(data.params)) {
+        data.params.forEach(param => {
+          if (param.result === 'success') {
+            this.updateParameterValue(param.key, param.value);
+          } else {
+            console.error(`参数 ${param.key} 获取失败: ${param.error || '未知错误'}`);
+          }
         });
-      } else {
-        Object.keys(data).forEach(key => this.updateParameterValue(key, data[key]));
+      }
+      
+      // 如果正在录制，将所有接收到的数据追加保存到 recordData 中
+      this.handleRecordData(data);
+    },
+    // 将接收到的数据追加保存到 recordData 中
+    handleRecordData(data) {
+      if (this.isRecording) {
+        let text;
+        if (typeof data === 'object') {
+          try {
+            text = JSON.stringify(data);
+          } catch (e) {
+            text = String(data);
+          }
+        } else {
+          text = data;
+        }
+        this.recordData += text + "\n";
       }
     },
-
-    // 更新各个参数
+    // ----------------------- 根据返回的参数名更新录制状态 -----------------------
     updateParameterValue(key, value) {
-      // strip prefix if present
-      if (key.startsWith('timeSyncSettings.')) {
-        key = key.slice('timeSyncSettings.'.length);
+      // 如果 key 以 "iqRecordStatus." 前缀，则去除该前缀
+      if (key.startsWith("iqRecordStatus.")) {
+        key = key.slice("iqRecordStatus.".length);
       }
       switch (key) {
-        case 'clockSource':
-          this.clockSource = value || 'INT_10MHz';
+        case 'recordStatus':
+          this.recordStatus = value;
           break;
-        case 'sfnOffset':
-          this.sfnOffset = parseInt(value);
+        case 'recordedTime':
+          // 如果正在录制，本地计时器控制显示，不覆盖
+          if (!this.isRecording) {
+            this.recordedTime = parseInt(value);
+          }
           break;
-        case 'freqCorrection':
-          this.freqCorrection = parseInt(value);
+        case 'recordFileName':
+          // 如果用户未手动输入文件名，则采用后端返回的文件名
+          if (!this.fileName) {
+            this.fileName = value;
+          }
+          this.recordFileName = value;
           break;
-        case 'vtcxoWord':
-          this.vtcxoWord = parseInt(value);
-          break;
-        case 'gnssLockStatus':
-          this.gnssLock = value;
-          break;
-        case 'gnssTime':
-          this.gnssTime = value;
-          break;
-        case 'longitude':
-          this.longitude = value;
-          break;
-        case 'latitude':
-          this.latitude = value;
-          break;
-        case 'system.debugEnable':
-          // 接收 debugEnable 字符串 "true"/"false"
-          this.debugEnable = (value === 'true');
+        case 'recordFilePath':
+          this.recordFilePath = value;
           break;
         default:
           console.log(`未处理的参数: ${key} = ${value}`);
       }
     },
-
-    // 应用设置
-    applyClockSync() {
-      if (this.sfnOffset < -999 || this.sfnOffset > 999) {
-        this.showError('SFN偏移超出范围', '范围 -999 ~ 999'); return;
+    // ----------------------- 开始录制 -----------------------
+    startRecording() {
+      if (this.isRecording) return;
+      if (!this.recordingTime || this.recordingTime <= 0) {
+        console.error("录制时长必须大于0秒");
+        return;
       }
-      if (this.debugEnable) {
-        if (this.freqCorrection < -1000 || this.freqCorrection > 1000) {
-          this.showError('频率校正超出范围', '范围 -1000 ~ 1000'); return;
+      this.isRecording = true;
+      this.recordedTime = 0;
+      this.recordData = ""; // 清空之前的数据
+  
+      // 发送开始录制指令（set 命令），录制时长以字符串格式发送
+      WebSocketService.sendSetCommand({
+        "iqRecordCommand.recordCommand": "START",
+        "iqRecordCommand.recordTime": this.recordingTime.toString()
+      });
+  
+      // 启动本地计时器：每秒更新录制时间（用于页面显示），达到设定时长后自动停止录制
+      this.timer = setInterval(() => {
+        if (this.recordedTime < this.recordingTime) {
+          this.recordedTime++;
+        } else {
+          this.stopRecording();
         }
-        if (this.vtcxoWord < 0 || this.vtcxoWord > 65535) {
-          this.showError('VTCXO电压字超出范围', '范围 0 ~ 65535'); return;
-        }
+      }, 1000);
+  
+      // 启动轮询定时器：每秒向后端发送 GET 命令获取录制状态
+      this.pollTimer = setInterval(() => {
+        const keys = [
+          "iqRecordStatus.recordStatus",
+          "iqRecordStatus.recordedTime",
+          "iqRecordStatus.recordFileName",
+          "iqRecordStatus.recordFilePath"
+        ];
+        WebSocketService.sendGetCommand(keys);
+      }, 1000);
+    },
+    
+    // ----------------------- 停止录制 -----------------------
+    stopRecording() {
+      if (!this.isRecording) return;
+      if (this.timer) {
+        clearInterval(this.timer);
+        this.timer = null;
       }
-
-      const data = {
-        'timeSyncSettings.clockSource': this.clockSource,
-        'timeSyncSettings.sfnOffset': String(this.sfnOffset),
-        // 仅在 debugEnable 时发送这两项
-        ...(this.debugEnable && {
-          'timeSyncSettings.freqCorrection': String(this.freqCorrection),
-          'timeSyncSettings.vtcxoWord': String(this.vtcxoWord)
-        })
-      };
-      this.lastOperation = { type: 'set', data };
-      WebSocketService.sendSetCommand(data);
-      this.isApplyModalVisible = true;
-      setTimeout(this.hideApplyModal, 1000);
-    },
-    hideApplyModal() {
-      this.isApplyModalVisible = false;
-    },
-
-    // 刷新数据
-    refreshClockSync() {
-      const keys = [
-        'timeSyncSettings.clockSource',
-        'timeSyncSettings.sfnOffset',
-        // 仅在 debugEnable 时请求这两项
-        ...(this.debugEnable
-          ? ['timeSyncSettings.freqCorrection', 'timeSyncSettings.vtcxoWord']
-          : []
-        ),
-        'timeSyncSettings.gnssLockStatus',
-        'timeSyncSettings.gnssTime',
-        'timeSyncSettings.longitude',
-        'timeSyncSettings.latitude',
-        'system.debugEnable'
-      ];
-      this.lastOperation = { type: 'get', data: keys };
-      WebSocketService.sendGetCommand(keys);
-      this.isRefreshModalVisible = true;
-      setTimeout(this.hideRefreshModal, 1000);
-    },
-    hideRefreshModal() {
-      this.isRefreshModalVisible = false;
-    },
-
-    // 错误处理
-    showError(message, details = '') {
-      this.errorInfo = { visible: true, message, details };
-    },
-    hideErrorModal() {
-      this.errorInfo.visible = false;
-    },
-    retryLastOperation() {
-      if (this.lastOperation.type === 'get') {
-        WebSocketService.sendGetCommand(this.lastOperation.data);
-      } else if (this.lastOperation.type === 'set') {
-        WebSocketService.sendSetCommand(this.lastOperation.data);
+      if (this.pollTimer) {
+        clearInterval(this.pollTimer);
+        this.pollTimer = null;
       }
-      this.hideErrorModal();
+      // 发送停止录制指令（set 命令）
+      WebSocketService.sendSetCommand({
+        "iqRecordCommand.recordCommand": "STOP"
+      });
+      this.isRecording = false;
+      this.showRecordingComplete();
+    },
+    
+    // ----------------------- 显示录制完成弹窗 -----------------------
+    showRecordingComplete() {
+      this.isModalVisible = true;
+      setTimeout(() => {
+        this.isModalVisible = false;
+      }, 1000);
+    },
+    
+    // ----------------------- 下载录制文件 -----------------------
+    downloadFile() {
+      // 如果后端返回了文件路径和文件名，则直接使用硬编码的下载地址
+      if (this.recordFilePath && this.recordFileName) {
+        // 映射：将 Linux 绝对路径 "/home/ecdav/DRM_Modu_bin/record" 映射为网页中的 "/record"
+        // 这里我们硬编码 base URL 为 "http://localhost:8080/record/"
+        const baseUrl = "http://localhost:8080/record/";
+        const downloadUrl = baseUrl + this.recordFileName;
+  
+        // 使用隐藏的 <a> 标签直接下载，不新开网页
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        // 如果用户输入了文件名则优先使用用户输入的文件名
+        link.download = this.fileName ? this.fileName : this.recordFileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        // 如果后端未返回文件信息，则弹出错误提示（可根据需要扩展其他逻辑）
+        alert("错误：未能获取录制文件信息！");
+      }
+    },
+    
+    // ----------------------- 备用：录制时长增减功能 -----------------------
+    incrementTime() {
+      this.recordingTime++;
+    },
+    decrementTime() {
+      if (this.recordingTime > 0) {
+        this.recordingTime--;
+      }
     }
   },
-
   mounted() {
+    // 初始化 WebSocket 连接及状态监控
     this.initWebSocket();
-    // 首次获取所有参数，包括 debugEnable
-    setTimeout(() => {
-      const keys = [
-        'timeSyncSettings.clockSource',
-        'timeSyncSettings.sfnOffset',
-        'timeSyncSettings.gnssLockStatus',
-        'timeSyncSettings.gnssTime',
-        'timeSyncSettings.longitude',
-        'timeSyncSettings.latitude',
-        'system.debugEnable'
-      ];
-      // 如果 debugEnable 为 true，还会在刷新时包含 freqCorrection 与 vtcxoWord
-      this.lastOperation = { type: 'get', data: keys };
-      WebSocketService.sendGetCommand(keys);
-    }, 500);
   },
-
   beforeUnmount() {
     WebSocketService.offMessage(this.handleWebSocketMessage);
+    if (this.timer) {
+      clearInterval(this.timer);
+    }
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+    }
   }
 };
 </script>
-
+  
 <style scoped>
 .content-wrapper {
   flex: 1;
@@ -347,22 +295,21 @@ export default {
   display: flex;
   justify-content: center;
 }
+  
 .content {
   width: 100%;
   max-width: 1000px;
-  background-color: #fff;
+  background-color: #ffffff;
   padding: 20px;
   border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
+  
 .content-container {
   max-width: 800px;
   margin: 0 auto;
 }
-h2 {
-  text-align: center;
-  margin-bottom: 30px;
-}
+  
 .connection-status {
   margin-bottom: 15px;
   padding: 8px;
@@ -370,79 +317,132 @@ h2 {
   border-radius: 4px;
   text-align: center;
 }
+  
 .connection-status.connected {
   background-color: #ccffcc;
 }
-table {
-  width: 100%;
-  border-collapse: collapse;
+  
+h2 {
+  text-align: center;
+  margin-bottom: 30px;
+}
+  
+.input-group {
   margin-bottom: 20px;
 }
-table, th, td {
-  border: 1px solid #ddd;
+  
+.input-with-buttons {
+  display: flex;
+  align-items: center;
 }
-th, td {
-  padding: 10px;
-  text-align: left;
+  
+.input-with-buttons input {
+  width: 100px;
+  padding: 5px;
+  margin-right: 10px;
 }
-.error {
-  border: 2px solid red;
+  
+.input-with-buttons button {
+  background-color: #003366;
+  color: white;
+  border: none;
+  padding: 5px;
+  cursor: pointer;
 }
-.error-msg {
-  color: red;
-  font-size: 12px;
-  margin-top: 5px;
+  
+.input-with-buttons button:hover {
+  background-color: #004488;
 }
+  
 .button-container {
   margin-bottom: 20px;
 }
+  
 button {
   background-color: #003366;
-  color: #fff;
+  color: white;
   border: none;
   padding: 10px 20px;
   border-radius: 3px;
   cursor: pointer;
   margin-right: 10px;
 }
+  
 button:hover {
   background-color: #004488;
 }
+  
 .modal {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   background-color: #003366;
-  color: #fff;
+  color: white;
   padding: 20px;
   border-radius: 5px;
   text-align: center;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
   z-index: 1000;
 }
-.modal button {
-  margin-top: 10px;
-  background-color: #fff;
-  color: #003366;
+  
+.modal p {
+  font-size: 18px;
 }
-.modal button:hover {
-  background-color: #f0f0f0;
+  
+input[type="text"] {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
 }
+  
+.start-recording {
+  background-color: #90ee90;
+}
+  
+.up-down-buttons button {
+  background-color: #003366;
+  color: white;
+  border: none;
+  padding: 5px;
+  cursor: pointer;
+}
+  
+.up-down-buttons button:hover {
+  background-color: #004488;
+}
+  
+/* 错误弹窗 */
 .error-modal {
   background-color: #cc3333;
   min-width: 300px;
 }
+  
 .error-details {
   font-size: 0.9em;
+  max-width: 400px;
+  word-break: break-all;
   margin-top: 10px;
   padding: 8px;
-  background: rgba(0,0,0,0.1);
+  background-color: rgba(0, 0, 0, 0.1);
   border-radius: 3px;
 }
+  
 .modal-buttons {
   display: flex;
   justify-content: center;
   gap: 10px;
   margin-top: 15px;
 }
+  
+.error {
+  border: 2px solid red;
+}
+  
+.error-msg {
+  color: red;
+  font-size: 12px;
+  margin-top: 5px;
+}
 </style>
+
